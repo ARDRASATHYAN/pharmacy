@@ -4,6 +4,7 @@ import DataTable from "../../components/commen/Datatable";
 import { getHsnColumns } from "./components/HsnHeader";
 import { createHsn, deleteHsn, fetchHsn, updateHsn } from "../../services/hsnapi";
 import HsnForm from "./components/HsnForm";
+import BasicTable from "@/components/commen/PaginationTable";
 
 export default function HsnMockApiHeader() {
   const [open, setOpen] = useState(false);
@@ -84,7 +85,7 @@ export default function HsnMockApiHeader() {
       </div>
 
 
-  <DataTable columns={columns} data={users} />
+  <BasicTable columns={columns} data={users} />
 
 
       <HsnForm

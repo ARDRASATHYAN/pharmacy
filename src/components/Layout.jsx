@@ -4,11 +4,12 @@ import Topbar from "./Topbar";
 
 export default function Layout() {
   return (
-    <div className="flex  min-h-screen">
+    <div className="flex min-h-screen">
       <Sidebar />
-      <div className="flex flex-col flex-1 md:ml-16 transition-all duration-300 over ">
+      <div className="flex flex-col flex-1 md:ml-16 transition-all duration-300">
         {/* <Topbar /> */}
-        <main className="flex-1 p-6 overflow-y-auto">
+        {/* ✅ Give main an ID so we can target it for measurement */}
+        <main id="main-content" className="flex-1 p-6 overflow-y-auto">
           <Outlet />
         </main>
       </div>

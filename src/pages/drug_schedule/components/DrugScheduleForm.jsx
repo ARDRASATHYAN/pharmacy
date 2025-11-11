@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import DraggableDialog from "../../../components/commen/DraggableDialog";
 
-const roles = ["Admin", "Manager", "Pharmacist", "Billing", "StoreKeeper"];
+
 
 export default function DrugScheduleForm({
   open,
@@ -51,20 +51,8 @@ export default function DrugScheduleForm({
             size="small"
           />
         </Box>
-        {!editMode && (
-          <TextField
-            label="address"
-            name="address"
-            value={formData.address}
-            onChange={onChange}
-            type="text"
-            fullWidth
-            multiline
-            rows={4}
-            size="small"
-            required
-          />
-        )}
+      
+        
         <TextField
             label="description"
             name="description"

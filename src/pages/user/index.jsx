@@ -75,7 +75,7 @@ export default function UserMockApiHeader() {
               username: "",
               password: "",
               full_name: "",
-                role: "Billing",
+              role: "Billing",
               is_active: true,
             });
           }}>

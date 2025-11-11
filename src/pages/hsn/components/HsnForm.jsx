@@ -45,7 +45,7 @@ export default function HsnForm({
             size="small"
           />
         </Box>
-        {!editMode && (
+      
           <TextField
             label="description"
             name="description"
@@ -58,7 +58,7 @@ export default function HsnForm({
             size="small"
             required
           />
-        )}
+        
 
       </Box>
     </DraggableDialog>

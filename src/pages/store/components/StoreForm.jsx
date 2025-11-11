@@ -42,22 +42,22 @@ export default function StoreForm({
           required
         />
 
-        {!editMode && (
-          <TextField
-            label="address"
 
-            name="address"
-            
-            value={formData.address}
-            onChange={onChange}
+        <TextField
+          label="address"
+
+          name="address"
+
+          value={formData.address}
+          onChange={onChange}
           type="text"
-            fullWidth
-            multiline
-            rows={3}
-            size="small"
-            required
-          />
-        )}
+          fullWidth
+          multiline
+          rows={3}
+          size="small"
+          required
+        />
+
         <TextField
           label="email"
           name="email"
@@ -70,8 +70,8 @@ export default function StoreForm({
           <TextField
             label="city"
             name="city"
-            
-            
+
+
             value={formData.city}
             onChange={onChange}
             fullWidth
@@ -91,7 +91,7 @@ export default function StoreForm({
         <Box display="flex" gap={2}>
           <TextField
             label="gst_no"
-            name="gst_no"            
+            name="gst_no"
             value={formData.gst_no}
             onChange={onChange}
             fullWidth

@@ -26,10 +26,10 @@ export default function ItemForm({
   onChange,
   editMode,
 }) {
-  
 
-    const { data: hsns = [], isLoading: loadingHsn } = useHsn();
-const { data: drugschedule = [], isLoading: loadingSchedule } = useDrugSchedule();
+
+  const { data: hsns = [], isLoading: loadingHsn } = useHsn();
+  const { data: drugschedule = [], isLoading: loadingSchedule } = useDrugSchedule();
 
   return (
     <DraggableDialog
@@ -41,7 +41,18 @@ const { data: drugschedule = [], isLoading: loadingSchedule } = useDrugSchedule(
     >
       <Box display="flex" flexDirection="column" gap={2}>
         <Box display="flex" gap={2}>
+         
           <TextField
+            label="name"
+            name="name"
+            value={formData.name}
+            onChange={onChange}
+            type="text"
+            fullWidth
+            size="small"
+            required
+          />
+           <TextField
             label="sku"
             name="sku"
             value={formData.sku}
@@ -59,33 +70,18 @@ const { data: drugschedule = [], isLoading: loadingSchedule } = useDrugSchedule(
             size="small"
           />
         </Box>
-        {!editMode && (
-          <TextField
-            label="name"
-            name="name"
-            value={formData.name}
-            onChange={onChange}
-            type="text"
-            fullWidth
-            multiline
-            rows={4}
-            size="small"
-            required
-          />
-        )}
-        <TextField
-            label="brand"
-            name="brand"
-            value={formData.brand}
-            onChange={onChange}
-            type="text"
-            fullWidth
-            multiline
-            rows={2}
-            size="small"
-            required
-          />
+      
         <Box display="flex" gap={2}>
+           <TextField
+          label="brand"
+          name="brand"
+          value={formData.brand}
+          onChange={onChange}
+          type="text"
+          fullWidth
+          size="small"
+          required
+        />
           <TextField
             label="generic_name"
             name="generic_name"
@@ -103,33 +99,79 @@ const { data: drugschedule = [], isLoading: loadingSchedule } = useDrugSchedule(
             size="small"
           />
         </Box>
-         <Box display="flex" gap={2}>
+       
           <TextField
             label="description"
             name="description"
             value={formData.description}
             onChange={onChange}
             fullWidth
+             multiline
+            rows={2}
             size="small"
           />
-        <TextField
-  select
-  label="Item Type"
-  name="item_type"
-  value={formData.item_type || "Medicine"}  // default
-  onChange={onChange}
-  fullWidth
-  size="small"
->
-  <MenuItem value="Medicine">Medicine</MenuItem>
-  <MenuItem value="OTC">OTC</MenuItem>
-  <MenuItem value="Consumable">Consumable</MenuItem>
-  <MenuItem value="Accessory">Accessory</MenuItem>
-  <MenuItem value="Other">Other</MenuItem>
-</TextField>
+         
+ <Box display="flex" gap={2}>
+   <TextField
+            select
+            label="Item Type"
+            name="item_type"
+            value={formData.item_type || "Medicine"}  
+            onChange={onChange}
+            fullWidth
+            size="small"
+          >
+            <MenuItem value="Medicine">Medicine</MenuItem>
+            <MenuItem value="OTC">OTC</MenuItem>
+            <MenuItem value="Consumable">Consumable</MenuItem>
+            <MenuItem value="Accessory">Accessory</MenuItem>
+            <MenuItem value="Other">Other</MenuItem>
+          </TextField>
 
+          <TextField
+            select
+            label="HSN Code"
+            name="hsn_id"
+            value={formData.hsn_id || ""}
+            onChange={onChange}
+            fullWidth
+            disabled={editMode}
+            size="small"
+          >
+            {loadingHsn ? (
+              <MenuItem disabled>Loading...</MenuItem>
+            ) : (
+              hsns.map((hsn) => (
+                <MenuItem key={hsn.hsn_id} value={hsn.hsn_id}>
+                  {hsn.hsn_code} — {hsn.description}
+                </MenuItem>
+              ))
+            )}
+          </TextField>
+
+          <TextField
+            select
+            label="Schedule"
+            name="schedule_id"
+            value={formData.schedule_id || ""}
+            onChange={onChange}
+            fullWidth
+            disabled={editMode}
+            size="small"
+          >
+            {loadingSchedule ? (
+              <MenuItem disabled>Loading...</MenuItem>
+            ) : (
+              drugschedule.map((s) => (
+                <MenuItem key={s.schedule_id} value={s.schedule_id}>
+                  {s.schedule_code}
+                </MenuItem>
+              ))
+            )}
+          </TextField>
         </Box>
-         <Box display="flex" gap={2}>
+       
+        <Box display="flex" gap={2}>
           <TextField
             label="pack_size"
             name="pack_size"
@@ -147,47 +189,7 @@ const { data: drugschedule = [], isLoading: loadingSchedule } = useDrugSchedule(
             size="small"
           />
         </Box>
-       <Box display="flex" gap={2}>
-  <TextField
-    select
-    label="HSN Code"
-    name="hsn_id"
-    value={formData.hsn_id || ""}
-    onChange={onChange}
-    fullWidth
-    size="small"
-  >
-    {loadingHsn ? (
-      <MenuItem disabled>Loading...</MenuItem>
-    ) : (
-      hsns.map((hsn) => (
-        <MenuItem key={hsn.hsn_id} value={hsn.hsn_id}>
-          {hsn.hsn_code} — {hsn.description}
-        </MenuItem>
-      ))
-    )}
-  </TextField>
-
-  <TextField
-    select
-    label="Schedule"
-    name="schedule_id"
-    value={formData.schedule_id || ""}
-    onChange={onChange}
-    fullWidth
-    size="small"
-  >
-    {loadingSchedule ? (
-      <MenuItem disabled>Loading...</MenuItem>
-    ) : (
-      drugschedule.map((s) => (
-        <MenuItem key={s.schedule_id} value={s.schedule_id}>
-          {s.schedule_code}
-        </MenuItem>
-      ))
-    )}
-  </TextField>
-</Box>
+       
 
 
 

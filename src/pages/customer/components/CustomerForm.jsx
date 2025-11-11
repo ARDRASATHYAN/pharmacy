@@ -58,7 +58,7 @@ export default function CustomerForm({
             size="small"
           />
         </Box>
-        {!editMode && (
+       
           <TextField
             label="address"
             name="address"
@@ -71,7 +71,7 @@ export default function CustomerForm({
             size="small"
             required
           />
-        )}
+    
       
         <Box display="flex" gap={2}>
           <TextField

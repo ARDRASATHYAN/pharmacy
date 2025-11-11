@@ -72,7 +72,14 @@ export default function DrugScheduleMockApiHeader() {
         <h2 className="text-xl font-bold text-blue-700 tracking-wide">
           Drug Schedule List
         </h2>
-        <Button variant="contained" color="primary" onClick={() => setOpen(true)}>
+        <Button variant="contained" color="primary" onClick={() => {
+    // 🧹 Clear previous data before opening
+    setFormData({
+      schedule_code:"", schedule_name:"", description:"", requires_prescription:"", restricted_sale:""
+    });
+    setEditMode(false);
+    setOpen(true);
+  }}>
           Add Drug Schedule
         </Button>
       </div>

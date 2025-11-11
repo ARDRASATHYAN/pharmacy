@@ -74,7 +74,14 @@ export default function HsnMockApiHeader() {
        <h2 className="text-xl font-bold text-blue-700 tracking-wide">
             HSN List
           </h2>
-        <Button variant="contained" color="primary" onClick={() => setOpen(true)}>
+        <Button variant="contained" color="primary" onClick={() => {
+    // 🧹 Clear previous data before opening
+    setFormData({
+     hsn_code:"", description:"", gst_percent:""
+    });
+    setEditMode(false);
+    setOpen(true);
+  }}>
           Add HSN
         </Button>
       </div>

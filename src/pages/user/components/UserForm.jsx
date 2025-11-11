@@ -53,7 +53,7 @@ export default function UserForm({
             required
           />
         </Box>
-        {!editMode && (
+       
           <TextField
             label="Password"
             name="password"
@@ -64,7 +64,7 @@ export default function UserForm({
             size="small"
             required
           />
-        )}
+        
 
 
 

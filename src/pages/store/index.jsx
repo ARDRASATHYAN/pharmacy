@@ -6,7 +6,7 @@ import BasicTable from "@/components/commen/BasicTable";
 import { useAddStore, useDeleteStore, useStores, useUpdateStore } from "@/hooks/useStore";
 
 export default function StoreMockApiHeader() {
- const { data: stores = [], isLoading } = useStores();
+  const { data: stores = [], isLoading } = useStores();
   const addStore = useAddStore();
   const updateStore = useUpdateStore();
   const deleteStore = useDeleteStore();
@@ -46,13 +46,13 @@ export default function StoreMockApiHeader() {
   };
 
 
-  
+
   // ✏️ Edit Handler
 
   const handleEdit = (row) => {
 
-    console.log("row",row);
-    
+    console.log("row", row);
+
     setFormData(row);
     setEditMode(true);
     setOpen(true);
@@ -74,16 +74,28 @@ export default function StoreMockApiHeader() {
   return (
     <>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-       <h2 className="text-xl font-bold text-blue-700 tracking-wide">
-            Store List
-          </h2>
-        <Button variant="contained" color="primary" onClick={() => setOpen(true)}>
+        <h2 className="text-xl font-bold text-blue-700 tracking-wide">
+          Store List
+        </h2>
+        <Button variant="contained" color="primary" onClick={() => {
+          setOpen(true);
+          setEditMode(false);
+          setFormData({
+            store_name: "",
+            address: "",
+            city: "",
+            state: "",
+            gst_no: "",
+            phone: "",
+            email: "",
+          });
+        }}>
           Add Store
         </Button>
       </div>
 
 
-  <BasicTable columns={columns} data={stores} />
+      <BasicTable columns={columns} data={stores} />
 
 
       <StoreForm
@@ -95,7 +107,7 @@ export default function StoreMockApiHeader() {
         onSubmit={handleSubmit}
         formData={formData}
         onChange={handleChange}
-        
+
         editMode={editMode}
       />
     </>

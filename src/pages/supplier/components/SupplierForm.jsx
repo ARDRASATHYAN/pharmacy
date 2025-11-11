@@ -12,9 +12,7 @@ import {
   Box,
 } from "@mui/material";
 import DraggableDialog from "../../../components/commen/DraggableDialog";
-import { useHsn } from "@/hooks/useHsn";
-import { useDrugSchedule } from "@/hooks/useDrugSchedule";
-import { Controller, useForm } from "react-hook-form";
+
 
 
 
@@ -58,7 +56,7 @@ export default function SupplierForm({
             size="small"
           />
         </Box>
-        {!editMode && (
+       
           <TextField
             label="address"
             name="address"
@@ -71,7 +69,7 @@ export default function SupplierForm({
             size="small"
             required
           />
-        )}
+  
         <TextField
             label="state"
             name="state"

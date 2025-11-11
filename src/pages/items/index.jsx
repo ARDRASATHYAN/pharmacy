@@ -81,7 +81,7 @@ export default function ItemMockApiHeader() {
     <>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
         <h2 className="text-xl font-bold text-blue-700 tracking-wide">
-          Drug Schedule List
+          Items List
         </h2>
         <Button variant="contained" color="primary" onClick={() => {
     // 🧹 Clear previous data before opening
@@ -102,7 +102,7 @@ export default function ItemMockApiHeader() {
     setEditMode(false);
     setOpen(true);
   }}>
-          Add Drug Schedule
+          Add Item
         </Button>
       </div>
 

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { RxDashboard, RxClipboard } from "react-icons/rx";
 import { LogOut, ChevronDown, ChevronRight, Tag } from "lucide-react";
-import { FaUserMd, FaUsers, FaPills, FaTruck, FaStore } from "react-icons/fa";
+import { FaUserMd, FaUsers, FaPills, FaTruck, FaStore, FaClipboardList } from "react-icons/fa";
 import { MdPointOfSale } from "react-icons/md";
 import { GiMedicinePills } from "react-icons/gi";
 
@@ -40,6 +40,7 @@ export default function Sidebar() {
     //     { name: "Stock Report", href: "/reports/stock" },
     //   ],
     // },
+    
     {
       icon: <FaUsers />,
       name: "Staff",
@@ -77,9 +78,19 @@ export default function Sidebar() {
       // ],
     },
      {
-      icon: <GiMedicinePills />,
+      icon: <FaClipboardList />,
     name: "Items",
       href: "/items",
+
+      // subLinks: [
+      //   { name: "Add drug", href: "/drug/add" },
+      //   { name: "drug List", href: "/drug/stock" },
+      // ],
+    },
+    {
+      icon: <FaTruck />,
+    name: "Supplier",
+      href: "/supplier",
 
       // subLinks: [
       //   { name: "Add drug", href: "/drug/add" },

@@ -3,57 +3,42 @@ import { Delete, Edit } from "lucide-react";
 
 
 
-export const getItemsColumns = (onEdit, onDelete) => [
+export const getSupplierColumns = (onEdit, onDelete) => [
     {
         header: "Id",
-        accessorKey: "item_id"
+        accessorKey: "supplier_id"
     },
       {
-        header: "sku",
-        accessorKey: "sku"
+        header: "supplier_name",
+        accessorKey: "supplier_name"
     },
       {
-        header: "barcode",
-        accessorKey: "barcode"
+        header: "phone",
+        accessorKey: "phone"
     },
 
     {
-        header: "name",
-        accessorKey: "name",
+        header: "address",
+        accessorKey: "address",
     },
     {
-        header: "brand",
-        accessorKey: "brand"
+        header: "state",
+        accessorKey: "state"
     },
     {
-        header: "generic_name",
-        accessorKey: "generic_name"
+        header: "gst_no",
+        accessorKey: "gst_no"
     },
       {
-        header: "hsn_id",
-        accessorKey: "hsn_id"
+        header: "email",
+        accessorKey: "email"
     },
 
     {
-        header: "is_active",
-        accessorKey: "is_active",
-    },
-    {
-        header: "pack_size",
-        accessorKey: "pack_size"
-    },
-    {
-        header: "schedule_id",
-        accessorKey: "schedule_id"
-    },
-    {
-        header: "manufacturer",
-        accessorKey: "manufacturer"
-    },
-  {
         header: "created_at",
-        accessorKey: "created_at"
+        accessorKey: "created_at",
     },
+    
   
 
    {
@@ -72,7 +57,7 @@ export const getItemsColumns = (onEdit, onDelete) => [
       <IconButton
         color="error"
         size="small"
-        onClick={() => onDelete(row.original.schedule_id)}
+        onClick={() => onDelete(row.original.supplier_id)}
         sx={{ padding: "4px" }}
       >
         <Delete size={16} />

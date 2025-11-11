@@ -18,7 +18,7 @@ import { Controller, useForm } from "react-hook-form";
 
 
 
-export default function ItemForm({
+export default function SupplierForm({
   open,
   onClose,
   onSubmit,
@@ -28,8 +28,7 @@ export default function ItemForm({
 }) {
   
 
-    const { data: hsns = [], isLoading: loadingHsn } = useHsn();
-const { data: drugschedule = [], isLoading: loadingSchedule } = useDrugSchedule();
+   
 
   return (
     <DraggableDialog
@@ -37,23 +36,23 @@ const { data: drugschedule = [], isLoading: loadingSchedule } = useDrugSchedule(
       onClose={onClose}
       onSubmit={onSubmit}
       editMode={editMode}
-      title={editMode ? "Edit Drug Schedule" : "Add New Drug Schedule"}
+      title={editMode ? "Edit Supplier" : "Add New Supplier"}
     >
       <Box display="flex" flexDirection="column" gap={2}>
         <Box display="flex" gap={2}>
           <TextField
-            label="sku"
-            name="sku"
-            value={formData.sku}
+            label="supplier_name"
+            name="supplier_name"
+            value={formData.supplier_name}
             onChange={onChange}
             fullWidth
             size="small"
             required
           />
           <TextField
-            label="barcode"
-            name="barcode"
-            value={formData.barcode}
+            label="phone"
+            name="phone"
+            value={formData.phone}
             onChange={onChange}
             fullWidth
             size="small"
@@ -61,9 +60,9 @@ const { data: drugschedule = [], isLoading: loadingSchedule } = useDrugSchedule(
         </Box>
         {!editMode && (
           <TextField
-            label="name"
-            name="name"
-            value={formData.name}
+            label="address"
+            name="address"
+            value={formData.address}
             onChange={onChange}
             type="text"
             fullWidth
@@ -74,112 +73,35 @@ const { data: drugschedule = [], isLoading: loadingSchedule } = useDrugSchedule(
           />
         )}
         <TextField
-            label="brand"
-            name="brand"
-            value={formData.brand}
+            label="state"
+            name="state"
+            value={formData.state}
             onChange={onChange}
             type="text"
             fullWidth
-            multiline
-            rows={2}
             size="small"
             required
           />
         <Box display="flex" gap={2}>
           <TextField
-            label="generic_name"
-            name="generic_name"
-            value={formData.generic_name}
+            label="gst_no"
+            name="gst_no"
+            value={formData.gst_no}
             onChange={onChange}
             fullWidth
             size="small"
           />
           <TextField
-            label="manufacturer"
-            name="manufacturer"
-            value={formData.manufacturer}
+            label="email"
+            name="email"
+            value={formData.email}
             onChange={onChange}
             fullWidth
             size="small"
           />
         </Box>
-         <Box display="flex" gap={2}>
-          <TextField
-            label="description"
-            name="description"
-            value={formData.description}
-            onChange={onChange}
-            fullWidth
-            size="small"
-          />
-          <TextField
-            label="item_type"
-            name="item_type"
-            value={formData.item_type}
-            onChange={onChange}
-            fullWidth
-            size="small"
-          />
-        </Box>
-         <Box display="flex" gap={2}>
-          <TextField
-            label="pack_size"
-            name="pack_size"
-            value={formData.pack_size}
-            onChange={onChange}
-            fullWidth
-            size="small"
-          />
-          <TextField
-            label="is_active"
-            name="is_active"
-            value={formData.is_active}
-            onChange={onChange}
-            fullWidth
-            size="small"
-          />
-        </Box>
-       <Box display="flex" gap={2}>
-  <TextField
-    select
-    label="HSN Code"
-    name="hsn_id"
-    value={formData.hsn_id || ""}
-    onChange={onChange}
-    fullWidth
-    size="small"
-  >
-    {loadingHsn ? (
-      <MenuItem disabled>Loading...</MenuItem>
-    ) : (
-      hsns.map((hsn) => (
-        <MenuItem key={hsn.hsn_id} value={hsn.hsn_id}>
-          {hsn.hsn_code} — {hsn.description}
-        </MenuItem>
-      ))
-    )}
-  </TextField>
-
-  <TextField
-    select
-    label="Schedule"
-    name="schedule_id"
-    value={formData.schedule_id || ""}
-    onChange={onChange}
-    fullWidth
-    size="small"
-  >
-    {loadingSchedule ? (
-      <MenuItem disabled>Loading...</MenuItem>
-    ) : (
-      drugschedule.map((s) => (
-        <MenuItem key={s.schedule_id} value={s.schedule_id}>
-          {s.schedule_code}
-        </MenuItem>
-      ))
-    )}
-  </TextField>
-</Box>
+        
+        
 
 
 

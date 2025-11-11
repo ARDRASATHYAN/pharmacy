@@ -37,7 +37,7 @@ const { data: drugschedule = [], isLoading: loadingSchedule } = useDrugSchedule(
       onClose={onClose}
       onSubmit={onSubmit}
       editMode={editMode}
-      title={editMode ? "Edit Drug Schedule" : "Add New Drug Schedule"}
+      title={editMode ? "Edit Item" : "Add New Item"}
     >
       <Box display="flex" flexDirection="column" gap={2}>
         <Box display="flex" gap={2}>

@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@mui/material";
-import {  getItemsColumns } from "./components/itemHeader";
 import BasicTable from "@/components/commen/BasicTable";
-import { useAdditem, useDeleteitem, useitem, useUpdateitem } from "@/hooks/useItem";
-import ItemForm from "./components/ItemForm";
 import { useAddSupplier, useDeleteSupplier, useSupplier, useUpdateSupplier } from "@/hooks/useSupplier";
+import SupplierForm from "./components/SupplierForm";
+import { getSupplierColumns } from "./components/SupplierHeader";
 
 export default function SupplierMockApiHeader() {
   const { data: supplier = [], isLoading } = useSupplier();
@@ -15,18 +14,7 @@ export default function SupplierMockApiHeader() {
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({
-    sku: "",
-      barcode: "",
-      name: "",
-      brand: "",
-      generic_name: "",
-      manufacturer: "",
-      hsn_id: "",
-      schedule_id: "",
-      description: "",
-      item_type: "",
-      pack_size: "",
-      is_active: true,
+    supplier_name:"", address:"", state:"", gst_no:"",phone:"" ,email:""
   });
 
   const handleChange = (e) => {
@@ -38,7 +26,7 @@ export default function SupplierMockApiHeader() {
   const handleSubmit = () => {
     if (editMode) {
       updateSupplier.mutate(
-        { id: formData.item_id, data: formData },
+        { id: formData.supplier_id, data: formData },
         {
 
           onSuccess: () => setOpen(false),
@@ -76,29 +64,18 @@ export default function SupplierMockApiHeader() {
 
 
   // ✅ pass handlers to columns (so edit/delete buttons work)
-  const columns = getItemsColumns(handleEdit, handleDelete);
+  const columns = getSupplierColumns(handleEdit, handleDelete);
 
   return (
     <>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
         <h2 className="text-xl font-bold text-blue-700 tracking-wide">
-          Drug Schedule List
+          Supplier List
         </h2>
         <Button variant="contained" color="primary" onClick={() => {
     // 🧹 Clear previous data before opening
     setFormData({
-      sku: "",
-      barcode: "",
-      name: "",
-      brand: "",
-      generic_name: "",
-      manufacturer: "",
-      hsn_id: "",
-      schedule_id: "",
-      description: "",
-      item_type: "",
-      pack_size: "",
-      is_active: true,
+      supplier_name:"", address:"", state:"", gst_no:"",phone:"" ,email:""
     });
     setEditMode(false);
     setOpen(true);
@@ -108,10 +85,10 @@ export default function SupplierMockApiHeader() {
       </div>
 
 
-      <BasicTable columns={columns} data={item} />
+      <BasicTable columns={columns} data={supplier} />
 
 
-      <ItemForm
+      <SupplierForm
         open={open}
         onClose={() => {
           setOpen(false);

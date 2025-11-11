@@ -7,6 +7,7 @@ import HsnMockApiHeader from "./pages/hsn";
 import DrugScheduleMockApiHeader from "./pages/drug_schedule";
 import Login from "./pages/auth/Login";
 import ItemMockApiHeader from "./pages/items";
+import SupplierMockApiHeader from "./pages/supplier";
 
 
 
@@ -18,13 +19,14 @@ function App() {
         <Route element={<Layout />}>
 
           <Route path="/dashboard" element={<Dashboard />} />
-         
-          <Route path="/staff" element={< UserMockApiHeader/>} />
-          <Route path="/store" element={< StoreMockApiHeader/>} />
-            <Route path="/hsn" element={< HsnMockApiHeader/>} />
-            <Route path="/drug" element={< DrugScheduleMockApiHeader/>} />
-             <Route path="/items" element={< ItemMockApiHeader/>} />
-         
+
+          <Route path="/staff" element={< UserMockApiHeader />} />
+          <Route path="/store" element={< StoreMockApiHeader />} />
+          <Route path="/hsn" element={< HsnMockApiHeader />} />
+          <Route path="/drug" element={< DrugScheduleMockApiHeader />} />
+          <Route path="/items" element={< ItemMockApiHeader />} />
+          <Route path="/supplier" element={< SupplierMockApiHeader />} />
+
 
 
         </Route>

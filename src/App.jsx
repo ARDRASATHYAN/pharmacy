@@ -9,6 +9,7 @@ import Login from "./pages/auth/Login";
 import ItemMockApiHeader from "./pages/items";
 import SupplierMockApiHeader from "./pages/supplier";
 import CustomerMockApiHeader from "./pages/customer";
+import StoreStockMockApiHeader from "./pages/store_stock";
 
 
 
@@ -29,6 +30,7 @@ function App() {
           <Route path="/items" element={< ItemMockApiHeader />} />
           <Route path="/supplier" element={< SupplierMockApiHeader />} />
           <Route path="/customers" element={< CustomerMockApiHeader />} />
+          <Route path="/stock" element={<StoreStockMockApiHeader />} />
 
 
 

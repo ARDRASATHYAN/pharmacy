@@ -5,6 +5,7 @@ import { LogOut, ChevronDown, ChevronRight, Tag } from "lucide-react";
 import { FaUserMd, FaUsers, FaPills, FaTruck, FaStore, FaClipboardList, FaUser } from "react-icons/fa";
 import { MdPointOfSale } from "react-icons/md";
 import { GiMedicinePills } from "react-icons/gi";
+import Inventory2Icon from "@mui/icons-material/Inventory2";
 
 function cn(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -101,6 +102,16 @@ export default function Sidebar() {
       icon: <FaUser />,
     name: "Customers",
       href: "/customers",
+
+      // subLinks: [
+      //   { name: "Add drug", href: "/drug/add" },
+      //   { name: "drug List", href: "/drug/stock" },
+      // ],
+    },
+    {
+      icon: <Inventory2Icon  />,
+    name: "stockstore",
+      href: "/stock",
 
       // subLinks: [
       //   { name: "Add drug", href: "/drug/add" },

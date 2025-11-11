@@ -29,10 +29,10 @@ export const getDrugScheduleColumns = (onEdit, onDelete) => [
         header: "restricted_sale",
         accessorKey: "restricted_sale"
     },
-  {
-        header: "created_at",
-        accessorKey: "created_at"
-    },
+  // {
+  //       header: "created_at",
+  //       accessorKey: "created_at"
+  //   },
   
 
    {

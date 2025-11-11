@@ -54,10 +54,10 @@ export const getItemsColumns = (onEdit, onDelete) => [
         header: "item_type",
         accessorKey: "item_type"
     },
-  {
-        header: "created_at",
-        accessorKey: "created_at"
-    },
+  // {
+  //       header: "created_at",
+  //       accessorKey: "created_at"
+  //   },
   
 
    {

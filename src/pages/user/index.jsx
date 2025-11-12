@@ -1,15 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { Button } from "@mui/material";
+import { Box, Button, MenuItem, TextField } from "@mui/material";
 import UserForm from "./components/UserForm";
 import { getUserColumns } from "./components/Userheader";
 import BasicTable from "@/components/commen/BasicTable";
 import { useAddUser, useDeleteUser, useUpdateUser, useUsers } from "@/hooks/useUsers";
+import UserFilter from "./components/UserFilter";
 
 export default function UserMockApiHeader() {
- const { data: users = [], isLoading ,isFetching } = useUsers();
-  const addUser = useAddUser();
-  const updateUser = useUpdateUser();
-  const deleteUser = useDeleteUser();
 
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -20,6 +17,17 @@ export default function UserMockApiHeader() {
     role: "Billing",
     is_active: true,
   });
+
+  const [filters, setFilters] = useState({
+    search: "",
+    role: "",
+    is_active: "",
+  });
+
+  const { data, isLoading ,isFetching } = useUsers(filters);
+  const addUser = useAddUser();
+  const updateUser = useUpdateUser();
+  const deleteUser = useDeleteUser();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -58,33 +66,50 @@ export default function UserMockApiHeader() {
 
   const columns = getUserColumns(handleEdit, handleDelete);
 
-  // if (isLoading) return <p>Loading users...</p>;
 
+
+  const handlePageChange = (page) => {
+    setFilters((prev) => ({ ...prev, page }));
+  };
+  // if (isLoading) return <p>Loading users...</p>;
+const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters((prev) => ({ ...prev, [name]: value, page: 1 })); 
+  };
  
 
   return (
     <>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-       <h2 className="text-xl font-bold text-blue-700 tracking-wide">
+    <h2 className="text-xl font-bold text-blue-700 tracking-wide p-0">
            User List
           </h2>
-        <Button variant="contained" color="primary" onClick={() => {
-            setOpen(true);
-            setEditMode(false);
-            setFormData({
-              username: "",
-              password: "",
-              full_name: "",
-              role: "Billing",
-              is_active: true,
-            });
-          }}>
-          Add User
-        </Button>
-      </div>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        {/* Left: Search */}
+        <Box>
+          <UserFilter filters={filters} onFilterChange={handleFilterChange} searchOnly />
+        </Box>
+
+        {/* Right: Filters and Add button */}
+        <Box display="flex" gap={2} alignItems="center">
+          <UserFilter filters={filters} onFilterChange={handleFilterChange} />
+          <Button
+            variant="contained"
+            color="primary"
+            size="small"
+            onClick={() => {
+              setOpen(true);
+              setEditMode(false);
+              setFormData({ username: "", password: "", full_name: "", role: "Billing", is_active: true });
+            }}
+          >
+            Add User
+          </Button>
+        </Box>
+      </Box>
 
 
-  <BasicTable columns={columns} data={users} loading={isLoading || isFetching} />
+  <BasicTable columns={columns}  data={data?.data || []} loading={isLoading || isFetching}  pagination={data?.pagination}
+        onPageChange={handlePageChange} />
 
 
       <UserForm

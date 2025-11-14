@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button } from "@mui/material";
 
 /**
@@ -19,6 +19,22 @@ export default function DraggableDialog({
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+
+ useEffect(() => {
+  if (open) {
+    requestAnimationFrame(() => {
+      if (dialogRef.current) {
+        const dialog = dialogRef.current.getBoundingClientRect();
+
+        const centerX = window.innerWidth / 2 - dialog.width / 2;
+        const centerY = window.innerHeight / 2 - dialog.height / 2;
+
+        setPosition({ x: centerX, y: centerY });
+      }
+    });
+  }
+}, [open]);
+
 
   const handleMouseDown = (e) => {
     const dialog = dialogRef.current;
@@ -56,6 +72,7 @@ export default function DraggableDialog({
           left: position.x,
           transition: dragging ? "none" : "transform 0.1s ease",
           cursor: dragging ? "grabbing" : "default",
+
         },
       }}
       onMouseMove={handleMouseMove}

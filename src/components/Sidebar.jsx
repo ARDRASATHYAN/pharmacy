@@ -55,20 +55,28 @@ export default function Sidebar() {
     name: "Items",
       href: "/items",
     },
-    // {
-    //   icon: <FaTruck />,
-    // name: "Supplier",
-    //   href: "/supplier",
+    {
+      icon: <FaTruck />,
+    name: "Supplier",
+      href: "/supplier",
+    },
 
-      
-    // },
-    // {
-    //   icon: <FaUser />,
-    // name: "Customers",
-    //   href: "/customers",
+    {
+      icon: <FaUsers />,
+      name: "purchase",
+      href: "/purchase/purchaceinvoice",
+      subLinks: [
+        { name: "View Invoice", href: "/purchase/purchaceinvoice" },
+        { name: "View PurchaseItem", href: "/purchase/purchaceitem" },
+      ],
+    },
+    {
+      icon: <FaUser />,
+    name: "Stock",
+      href: "/stock",
 
      
-    // },
+    },
     // {
     //   icon: <Inventory2Icon  />,
     // name: "stockstore",

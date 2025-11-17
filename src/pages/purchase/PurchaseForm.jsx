@@ -1,10 +1,6 @@
+// src/components/purchase/PurchaseForm.jsx
 import React, { useEffect } from "react";
-import {
-  TextField,
-  MenuItem,
-  Box,
-  Button,
-} from "@mui/material";
+import { TextField, MenuItem, Box, Button, Typography } from "@mui/material";
 
 import { useStores } from "@/hooks/useStore";
 import { useSupplier } from "@/hooks/useSupplier";
@@ -15,6 +11,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
 import { useCurrentUser } from "@/hooks/useAuth";
 import DraggableDialog from "@/components/commen/DraggableDialog";
+import { useitem } from "@/hooks/useItem"; // 👈 make sure this name matches your hook
 
 export default function PurchaseForm({
   open,
@@ -22,42 +19,49 @@ export default function PurchaseForm({
   onSubmit,
   formData,
   onChange,
+  itemDraft,
+  onItemChange,
+  items,
+  onAddItem,
   editMode,
-   // 👈 Pass current logged-in user here (from auth context or props)
 }) {
   const { data: store = [], isLoading: loadingStore } = useStores();
   const { data: supplier = [], isLoading: loadingSupplier } = useSupplier();
-  const { data: user = [], isLoading: loadingUser } = useUsers();
-  const { data: currentUser = [], isLoading:currentuserloading } = useCurrentUser();
-  console.log(currentUser,"currentUser");
-  
+  const { data: usersResponse, isLoading: loadingUser } = useUsers();
+  const { data: currentUserResponse, isLoading: currentuserloading } =
+    useCurrentUser();
 
-  // 🧮 Auto-calculate net amount = total_amount + total_gst - total_discount
+  // 🔹 normalize currentUser
+  const currentUser = Array.isArray(currentUserResponse)
+    ? currentUserResponse[0]
+    : currentUserResponse || null;
+
+  // 🔹 normalize users list
+  const usersList = Array.isArray(usersResponse?.data)
+    ? usersResponse.data
+    : Array.isArray(usersResponse)
+    ? usersResponse
+    : [];
+
+  // 🔹 Master items list (for dropdown + GST + pack qty)
+  const { data: itemsMaster = [], isLoading: loadingItems } = useitem();
+
+  console.log("currentUser in form:", currentUser);
+  console.log("formData.user_id INSIDE FORM:", formData.user_id);
+
+  // 👤 Auto-set created_by (login user) into formData.user_id (for display / edit)
   useEffect(() => {
-    const total = parseFloat(formData.total_amount) || 0;
-    const gst = parseFloat(formData.total_gst) || 0;
-    const discount = parseFloat(formData.total_discount) || 0;
-    const net = total + gst - discount;
-
-    onChange({
-      target: { name: "net_amount", value: net.toFixed(2) },
-    });
-  }, [formData.total_amount, formData.total_gst, formData.total_discount]);
-
-  // 👤 Auto-set created_by (login user)
- useEffect(() => {
-  if (
-    currentUser &&
-    currentUser.user_id &&
-    !formData.user_id // only set if not already set
-  ) {
-    onChange({
-      target: { name: "user_id", value: currentUser.user_id },
-    });
-  }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [currentUser?.user_id]);
-
+    if (
+      currentUser &&
+      currentUser.user_id &&
+      !formData.user_id // only set if not already set
+    ) {
+      onChange({
+        target: { name: "user_id", value: currentUser.user_id },
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.user_id]);
 
   return (
     <DraggableDialog
@@ -69,7 +73,7 @@ export default function PurchaseForm({
       width="lg"
     >
       <Box display="flex" flexDirection="column" gap={2}>
-        {/* Row 1 */}
+        {/* Row 1 - Invoice header */}
         <Box display="flex" gap={2}>
           <TextField
             label="Invoice No"
@@ -78,13 +82,14 @@ export default function PurchaseForm({
             onChange={onChange}
             fullWidth
             size="small"
-            required
           />
 
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
               label="Invoice Date"
-              value={formData.invoice_date ? dayjs(formData.invoice_date) : null}
+              value={
+                formData.invoice_date ? dayjs(formData.invoice_date) : null
+              }
               onChange={(newValue) =>
                 onChange({
                   target: {
@@ -99,7 +104,7 @@ export default function PurchaseForm({
             />
           </LocalizationProvider>
 
-           <TextField
+          <TextField
             select
             label="Supplier"
             name="supplier_id"
@@ -119,8 +124,7 @@ export default function PurchaseForm({
             )}
           </TextField>
 
-
-           <TextField
+          <TextField
             select
             label="Store"
             name="store_id"
@@ -141,24 +145,78 @@ export default function PurchaseForm({
           </TextField>
         </Box>
 
-<h1>items</h1>
-        {/* add item */}
-         <Box display="flex" gap={2}>
+        {/* Items section */}
+        <Typography variant="h6" mt={2}>
+          Items
+        </Typography>
+
+        {/* Item input row 1 */}
+        <Box display="flex" gap={2}>
+          {/* Item dropdown with auto GST + pack qty */}
           <TextField
-            label="item name"
-            name="item name"
-            value={formData.item_name}
-            onChange={onChange}
+            select
+            label="Item"
+            name="item_id"
+            value={itemDraft.item_id || ""}
+            onChange={(e) => {
+              const { value } = e.target;
+
+              // 1️⃣ update item_id
+              onItemChange({
+                target: { name: "item_id", value },
+              });
+
+              // 2️⃣ find selected item from master list
+              const selectedItem = itemsMaster.find(
+                (it) => it.item_id === Number(value)
+              );
+
+              if (selectedItem) {
+                // 3️⃣ auto-fill GST from HSN if available
+                if (
+                  selectedItem.hsn &&
+                  selectedItem.hsn.gst_percent != null
+                ) {
+                  onItemChange({
+                    target: {
+                      name: "gst_percent",
+                      value: selectedItem.hsn.gst_percent,
+                    },
+                  });
+                }
+
+                // 4️⃣ auto-fill pack qty from item table
+                //    change 'pack_size' to your actual column name if different
+                if (selectedItem.pack_size != null) {
+                  onItemChange({
+                    target: {
+                      name: "pack_qty",
+                      value: selectedItem.pack_size,
+                    },
+                  });
+                }
+              }
+            }}
             fullWidth
             size="small"
             required
-          />
+          >
+            {loadingItems ? (
+              <MenuItem disabled>Loading items...</MenuItem>
+            ) : (
+              itemsMaster.map((it) => (
+                <MenuItem key={it.item_id} value={it.item_id}>
+                  {it.item_name || it.name || `Item #${it.item_id}`}
+                </MenuItem>
+              ))
+            )}
+          </TextField>
 
-           <TextField
-            label="batch no"
-            name="item name"
-            value={formData.item_name}
-            onChange={onChange}
+          <TextField
+            label="Batch No"
+            name="batch_no"
+            value={itemDraft.batch_no}
+            onChange={onItemChange}
             fullWidth
             size="small"
             required
@@ -166,12 +224,14 @@ export default function PurchaseForm({
 
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
-              label="expiry Date"
-              value={formData.invoice_date ? dayjs(formData.invoice_date) : null}
+              label="Expiry Date"
+              value={
+                itemDraft.expiry_date ? dayjs(itemDraft.expiry_date) : null
+              }
               onChange={(newValue) =>
-                onChange({
+                onItemChange({
                   target: {
-                    name: "invoice_date",
+                    name: "expiry_date",
                     value: newValue ? newValue.toISOString() : null,
                   },
                 })
@@ -183,135 +243,106 @@ export default function PurchaseForm({
           </LocalizationProvider>
 
           <TextField
-            label="pack qty"
-            name="item name"
-            value={formData.item_name}
-            onChange={onChange}
+            label="Pack Qty"
+            name="pack_qty"
+            value={itemDraft.pack_qty}
+            onChange={onItemChange}
             fullWidth
             size="small"
-            required
           />
         </Box>
-          <Box display="flex" gap={2}>
-         <TextField
-            label="qty"
-            name="item name"
-            value={formData.item_name}
-            onChange={onChange}
-            fullWidth
-            size="small"
-            required
-          />
-           <TextField
-            label="rate"
-            name="item name"
-            value={formData.item_name}
-            onChange={onChange}
-            fullWidth
-            size="small"
-            required
-          />
-           <TextField
-            label="mrp"
-            name="item name"
-            value={formData.item_name}
-            onChange={onChange}
-            fullWidth
-            size="small"
-            required
-          />
-           <TextField
-            label="gst%"
-            name="item name"
-            value={formData.item_name}
-            onChange={onChange}
+
+        {/* Item input row 2 */}
+        <Box display="flex" gap={2}>
+          <TextField
+            label="Qty"
+            name="qty"
+            value={itemDraft.qty}
+            onChange={onItemChange}
             fullWidth
             size="small"
             required
           />
           <TextField
-            label="discount%"
-            name="item name"
-            value={formData.item_name}
-            onChange={onChange}
+            label="Purchase Rate"
+            name="purchase_rate"
+            value={itemDraft.purchase_rate}
+            onChange={onItemChange}
             fullWidth
             size="small"
             required
           />
-           <TextField
-            label="total"
-            name="item name"
-            value={formData.item_name}
-            onChange={onChange}
+          <TextField
+            label="MRP"
+            name="mrp"
+            value={itemDraft.mrp}
+            onChange={onItemChange}
             fullWidth
             size="small"
-            required
           />
+          <TextField
+            label="GST %"
+            name="gst_percent"
+            value={itemDraft.gst_percent}
+            onChange={onItemChange}
+            fullWidth
+            size="small"
+            InputProps={{ readOnly: true }} // 👈 locked to HSN
+          />
+          <TextField
+            label="Discount %"
+            name="discount_percent"
+            value={itemDraft.discount_percent}
+            onChange={onItemChange}
+            fullWidth
+            size="small"
+          />
+        </Box>
 
+        {/* Add item button */}
+        <Box display="flex" justifyContent="flex-end">
+          <Button
+            variant="contained"
+            sx={{
+              backgroundColor: "#2563eb",
+              "&:hover": { backgroundColor: "#1e40af" },
+              borderRadius: 2,
+            }}
+            onClick={onAddItem}
+          >
+            Add Item
+          </Button>
+        </Box>
 
+        {/* Simple list of added items */}
+        {items.length > 0 && (
+          <Box mt={2}>
+            <Typography variant="subtitle1">Added Items</Typography>
+            {items.map((it, idx) => (
+              <Box
+                key={idx}
+                display="flex"
+                gap={2}
+                sx={{ fontSize: 14, paddingY: 0.5 }}
+              >
+                <span>#{idx + 1}</span>
+                <span>Item ID: {it.item_id}</span>
+                <span>Batch: {it.batch_no}</span>
+                <span>Qty: {it.qty}</span>
+                <span>Rate: {it.purchase_rate}</span>
+              </Box>
+            ))}
           </Box>
-           <Box display="flex" gap={2}>
-           
-          <Button variant="contained"
-          sx={{
-            backgroundColor: "#2563eb",
-            "&:hover": { backgroundColor: "#1e40af" },
-            borderRadius: 2,
-          }}>Add</Button>
+        )}
 
-
-</Box>
-        {/* Row 2 */}
-        {/* <Box display="flex" gap={2}>
-          <TextField
-            label="Total Amount"
-            name="total_amount"
-            value={formData.total_amount}
-            onChange={onChange}
-            fullWidth
-            size="small"
-          />
-          <TextField
-            label="Total GST"
-            name="total_gst"
-            value={formData.total_gst}
-            onChange={onChange}
-            fullWidth
-            size="small"
-          />
-          <TextField
-            label="Total Discount"
-            name="total_discount"
-            value={formData.total_discount}
-            onChange={onChange}
-            fullWidth
-            size="small"
-          />
-        </Box> */}
-
-        {/* Row 3 */}
-        {/* <Box display="flex" gap={2}>
-          <TextField
-            label="Net Amount"
-            name="net_amount"
-            value={formData.net_amount}
-            fullWidth
-            size="small"
-            InputProps={{ readOnly: true }}
-          />
-
-         
-
-         
-        </Box> */}
-
-        {/* Row 4 - Created By */}
+        {/* Created By display (read-only) */}
         <TextField
           label="Created By"
           value={
             currentUser
               ? currentUser.username
-              : user.find((u) => u.user_id === formData.user_id)?.username || ""
+              : usersList.find((u) => u.user_id === formData.user_id)
+                  ?.username || ""
           }
           fullWidth
           size="small"

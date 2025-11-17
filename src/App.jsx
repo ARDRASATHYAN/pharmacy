@@ -13,6 +13,9 @@ import StoreStockMockApiHeader from "./pages/store_stock";
 import PurchaseInvoiceMockApiHeader from "./pages/purchase_invoices";
 import AddPurchase from "./components/commen/AddItemsPage";
 import PreviewPurchase from "./components/commen/PreviewItemsPage ";
+import PurchaseItemMockApiHeader from "./pages/purchaseItem";
+import StockMockApiHeader from "./pages/stock";
+import PurchaseReturnMockApiHeader from "./pages/purchase_return";
 
 
 
@@ -37,8 +40,11 @@ function App() {
           <Route path="/items" element={< ItemMockApiHeader />} />
           <Route path="/supplier" element={< SupplierMockApiHeader />} />
           <Route path="/customers" element={< CustomerMockApiHeader />} />
-          <Route path="/stock" element={<StoreStockMockApiHeader />} />
-          <Route path="/purchaceinvoice" element={<PurchaseInvoiceMockApiHeader />} />
+          {/* <Route path="/stock" element={<StoreStockMockApiHeader />} /> */}
+          <Route path="/purchase/purchaceinvoice" element={<PurchaseInvoiceMockApiHeader />} />
+           <Route path="/purchase/purchaceitem" element={<PurchaseItemMockApiHeader />} />
+                <Route path="/stock" element={<StockMockApiHeader />} />
+                <Route path="/return" element={<PurchaseReturnMockApiHeader />} />
 
 
 

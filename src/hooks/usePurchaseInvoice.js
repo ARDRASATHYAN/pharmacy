@@ -1,12 +1,22 @@
 
 import itemService from "@/services/itemService";
 import purchaseInvoiceService from "@/services/purchaseInvoiceService";
+import purchaseService from "@/services/purchaseService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export function usepurchaseinvoice() {
   return useQuery({
     queryKey: ["purchaseinvoice"],
-    queryFn: purchaseInvoiceService.getpurchaseInvoice,
+    queryFn: purchaseService.getpurchaseInvoise,
+    staleTime: 1000 * 60 * 5, // 5 min cache
+  });
+}
+
+
+export function usepurchaseitems() {
+  return useQuery({
+    queryKey: ["purchaseitem"],
+    queryFn: purchaseService.getpurchasItem,
     staleTime: 1000 * 60 * 5, // 5 min cache
   });
 }
@@ -14,7 +24,7 @@ export function usepurchaseinvoice() {
 export function useAddpurchaseinvoice() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn:purchaseInvoiceService.purchaseInvoiceCreate,
+    mutationFn:purchaseService.createPurchase,
     onSuccess: () => queryClient.invalidateQueries(["purchaseinvoice"]),
   });
 }

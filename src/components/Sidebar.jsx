@@ -72,6 +72,16 @@ export default function Sidebar() {
       ],
     },
     {
+      icon: <FaUsers />,
+      name: "purchase return",
+      href: "/return/purchacereturn",
+      subLinks: [
+        { name: "Add Return", href: "/return/addpurchasereturn" },
+        { name: "View Return", href: "/purchase/purchacereturn" },
+        { name: "View Return Item", href: "/return/returnitem" },  
+      ],
+    },
+    {
       icon: <FaUser />,
     name: "Stock",
       href: "/stock",

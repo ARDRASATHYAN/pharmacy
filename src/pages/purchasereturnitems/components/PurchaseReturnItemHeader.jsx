@@ -3,33 +3,37 @@ import { Delete, Edit } from "lucide-react";
 
 
 
-export const getPurchaseReturnColumns = (onEdit, onDelete) => [
+export const getPurchaseReturnItemColumns = (onEdit, onDelete) => [
     {
         header: "Id",
+        accessorKey: "return_item_id"
+    },
+      {
+        header: "return_id",
         accessorKey: "return_id"
     },
-      {
-        header: "purchase_id",
-        accessorKey: "purchase_id"
+       {
+        header: "item_id",
+        accessorKey: "item_id"
     },
       {
-        header: "store_id",
-        accessorKey: "store_id"
+        header: "batch_no",
+        accessorKey: "batch_no"
     },
 
     {
-        header: "return_date",
-        accessorKey: "return_date",
+        header: "qty",
+        accessorKey: "qty",
     },
     {
-        header: "reason",
-        accessorKey: "reason"
+        header: "rate",
+        accessorKey: "rate"
     },
     {
-        header: "total_amount",
-        accessorKey: "total_amount"
+        header: "amount",
+        accessorKey: "amount"
     },
-     
+
 
    {
   header: "Actions",
@@ -58,4 +62,4 @@ export const getPurchaseReturnColumns = (onEdit, onDelete) => [
 
 
 
-]
+];

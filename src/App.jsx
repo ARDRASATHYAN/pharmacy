@@ -14,6 +14,8 @@ import PurchaseItemMockApiHeader from "./pages/purchaseItem";
 import StockMockApiHeader from "./pages/stock";
 import PurchaseReturnMockApiHeader from "./pages/purchase_return";
 import AddPurchaseForm from "./pages/purchase_invoices/components/AddPurchase";
+import PurchaseReturnForm from "./pages/purchase_return/components/PurchaseReturnForm";
+import PurchaseREturnItemMockApiHeader from "./pages/purchasereturnitems";
 
 
 
@@ -41,8 +43,10 @@ function App() {
           <Route path="/purchase/purchaceitem" element={<PurchaseItemMockApiHeader />} />
           <Route path="/stock" element={<StockMockApiHeader />} />
           <Route path="/return" element={<PurchaseReturnMockApiHeader />} />
-          <Route path="/purchase/addpurchase" element={<AddPurchaseForm/>} />
-
+          <Route path="/purchase/addpurchase" element={<AddPurchaseForm />} />
+          <Route path="/return/addpurchasereturn" element={<PurchaseReturnForm />} />
+          <Route path="/purchase/purchacereturn" element={<PurchaseReturnMockApiHeader />} />
+          <Route path="/return/returnitem" element={<PurchaseREturnItemMockApiHeader />} />
 
 
         </Route>

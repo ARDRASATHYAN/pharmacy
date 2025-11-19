@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   TextField,
   MenuItem,
@@ -7,20 +7,24 @@ import {
   Typography,
   Divider,
   IconButton,
-  Tooltip,
+  Paper,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
-  Paper,
+  Button,
 } from "@mui/material";
+
 import { AddCircleOutline, DeleteOutline } from "@mui/icons-material";
-import DraggableDialog from "../../../components/commen/DraggableDialog";
+import { useCurrentUser } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import purchaseService from "@/services/purchaseService";
+import apiClient from "@/services/apiClient";
 import { useStores } from "@/hooks/useStore";
+import { usepurchaseitems } from "@/hooks/usePurchaseInvoice";
 import { useitem } from "@/hooks/useItem";
 
-// Each row represents one product in the return
 const emptyItemRow = {
   item_id: "",
   batch_no: "",
@@ -31,430 +35,366 @@ const emptyItemRow = {
   expiry_date: "",
 };
 
-export default function PurchaseReturnForm({
-  open,
-  onClose,
-  onSubmit,
-  formData = {},
-  editMode,
-}) {
-  const { data: stores = [], isLoading: loadingStores } = useStores();
-  const { data: items = [], isLoading: loadingItems } = useitem();
+export default function PurchaseReturnForm({ onClose, onSubmit, editMode }) {
+  // ------------------------------
+  // LOAD DATA
+  // ------------------------------
 
-  // Header level state
+  const { data: storeList = [] } = useStores();
+
+  const { data: purchaseList = [] } = useQuery({
+    queryKey: ["purchase-invoices"],
+    queryFn: purchaseService.getpurchaseInvoise,
+  });
+
+  const { data: items = [] } = useitem();
+
+
+  const { data: purchaseItems = [] } = usepurchaseitems();
+
+  const { data: currentUser } = useCurrentUser();
+
+  // ------------------------------
+  // STATES
+  // ------------------------------
+
   const [header, setHeader] = useState({
     purchase_id: "",
     store_id: "",
     return_date: "",
-    reason: "", // general note (optional)
-    total_amount: "",
+    reason: "",
+    total_amount: 0,
   });
 
-  // Multiple item rows
   const [rows, setRows] = useState([emptyItemRow]);
 
-  // Hydrate in edit mode or reset when dialog opens/closes
+  // ------------------------------
+  // AUTO-FILL STORE + ITEMS WHEN PURCHASE SELECTED
+  // ------------------------------
+
   useEffect(() => {
-    if (formData && editMode) {
-      setHeader({
-        purchase_id: formData.purchase_id || "",
-        store_id: formData.store_id || "",
-        return_date: formData.return_date || "",
-        reason: formData.reason || "",
-        total_amount: formData.total_amount || "",
-      });
+    if (!header.purchase_id) return;
 
-      setRows(
-        Array.isArray(formData.items) && formData.items.length > 0
-          ? formData.items.map((r) => ({
-              item_id: r.item_id || "",
-              batch_no: r.batch_no || "",
-              qty: r.qty || "",
-              rate: r.rate || "",
-              amount: r.amount || "",
-              reason: r.reason || "",
-              expiry_date: r.expiry_date || "",
-            }))
-          : [emptyItemRow]
-      );
-    } else if (!editMode) {
-      setHeader({
-        purchase_id: "",
-        store_id: "",
-        return_date: "",
-        reason: "",
-        total_amount: "",
-      });
-      setRows([emptyItemRow]);
+    // 1️⃣ Auto-fill store ID
+    const selectedPurchase = purchaseList.find(
+      (p) => p.purchase_id == header.purchase_id
+    );
+
+    if (selectedPurchase) {
+      setHeader((prev) => ({
+        ...prev,
+        store_id: selectedPurchase.store_id,
+      }));
     }
-  }, [formData, editMode, open]);
 
-  // Handle header change
+    // 2️⃣ Filter purchaseItems by selected purchase_id
+    const filtered = purchaseItems.filter(
+      (item) => item.purchase_id == header.purchase_id
+    );
+
+    // 3️⃣ Map purchase items to table rows
+    const mapped = filtered.map((item) => ({
+      item_id: item.item_id,
+      batch_no: item.batch_no,
+      qty: "",
+      rate: item.purchase_rate,
+      amount: "",
+      reason: "",
+      expiry_date: item.expiry_date,
+    }));
+
+    setRows(mapped);
+  }, [header.purchase_id, purchaseList, purchaseItems]);
+
+  // ------------------------------
+  // HANDLERS
+  // ------------------------------
+
   const handleHeaderChange = (e) => {
-    const { name, value } = e.target;
-    setHeader((prev) => ({ ...prev, [name]: value }));
+    setHeader({ ...header, [e.target.name]: e.target.value });
   };
 
-  // Handle row change (per item)
   const handleRowChange = (index, field, value) => {
-    setRows((prev) => {
-      const updated = [...prev];
-      const row = { ...updated[index], [field]: value };
+    const updated = [...rows];
+    updated[index][field] = value;
 
-      // auto-calc amount when qty or rate changes
-      if (field === "qty" || field === "rate") {
-        const qtyNum = parseFloat(row.qty) || 0;
-        const rateNum = parseFloat(row.rate) || 0;
-        row.amount =
-          qtyNum === 0 && rateNum === 0 ? "" : (qtyNum * rateNum).toFixed(2);
-      }
+    if (field === "qty" || field === "rate") {
+      const qty = parseFloat(updated[index].qty || 0);
+      const rate = parseFloat(updated[index].rate || 0);
+      updated[index].amount = (qty * rate).toFixed(2);
+    }
 
-      updated[index] = row;
-      return updated;
-    });
+    setRows(updated);
   };
 
   const handleAddRow = () => {
-    setRows((prev) => [...prev, emptyItemRow]);
+    setRows([...rows, { ...emptyItemRow }]);
   };
 
   const handleRemoveRow = (index) => {
-    setRows((prev) => {
-      if (prev.length === 1) return prev; // at least one row
-      const updated = [...prev];
-      updated.splice(index, 1);
-      return updated;
-    });
+    if (rows.length === 1) return;
+    setRows(rows.filter((_, i) => i !== index));
   };
 
-  // Auto computed total from items
-  const computedTotal = useMemo(() => {
-    return rows
-      .reduce((sum, row) => sum + (parseFloat(row.amount) || 0), 0)
-      .toFixed(2);
+  // ------------------------------
+  // AUTO TOTAL
+  // ------------------------------
+
+  useEffect(() => {
+    const total = rows.reduce(
+      (sum, r) => sum + parseFloat(r.amount || 0),
+      0
+    );
+
+    setHeader((prev) => ({ ...prev, total_amount: total.toFixed(2) }));
   }, [rows]);
 
-  // Keep total_amount in sync (can still be overridden by user if you want)
-  useEffect(() => {
-    setHeader((prev) => ({
-      ...prev,
-      total_amount: computedTotal,
-    }));
-  }, [computedTotal]);
+  // ------------------------------
+  // SUBMIT
+  // ------------------------------
 
-  // Final submit handler
-  const handleSubmit = () => {
-    const payload = {
-      ...header,
-      items: rows.filter((r) => r.item_id), // keep only rows with an item selected
-    };
+  const handleSubmit = async () => {
+    try {
+      const payload = {
+        purchase_id: header.purchase_id,
+        store_id: header.store_id,
+        created_by: currentUser?.user_id,
+        return_date: header.return_date,
+        reason: header.reason,
+        items: rows.map((r) => ({
+          item_id: r.item_id,
+          batch_no: r.batch_no,
+          qty: Number(r.qty),
+          rate: Number(r.rate),
+          item_reason: r.reason,
+          expiry_date: r.expiry_date,
+        })),
+      };
 
-    if (onSubmit) onSubmit(payload);
+      const res = await apiClient.post("/purchasereturn", payload);
+
+      if (onSubmit) onSubmit(res.data);
+      if (onClose) onClose();
+    } catch (err) {
+      alert(err?.response?.data?.message || "Error submitting return.");
+    }
   };
 
+  const getItemName = (item_id) => {
+    const found = items.find((i) => i.item_id == item_id);
+    return found ? found.name : "";
+  };
+
+
+  // ------------------------------
+  // UI
+  // ------------------------------
+
   return (
-    <DraggableDialog
-      open={open}
-      onClose={onClose}
-      onSubmit={handleSubmit}
-      editMode={editMode}
-      title={editMode ? "Edit Purchase Return" : "Add Purchase Return"}
-      width="lg"
-      fullWidth
-    >
-      <Box display="flex" flexDirection="column" gap={3}>
-        {/* Header Info */}
-        <Box>
-          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-            Return Details
-          </Typography>
-          <Divider />
-          <Grid container spacing={2} mt={1}>
-            {/* Purchase ID */}
-            <Grid item xs={12} sm={4}>
-              <TextField
-                select
-                label="Purchase ID"
-                name="purchase_id"
-                value={header.purchase_id}
-                onChange={handleHeaderChange}
-                fullWidth
-                disabled={editMode}
-                size="small"
-                required
-              >
-                {loadingStores ? (
-                  <MenuItem disabled>Loading...</MenuItem>
-                ) : stores.length === 0 ? (
-                  <MenuItem disabled>No purchases found</MenuItem>
-                ) : (
-                  stores.map((s) => (
-                    <MenuItem key={s.store_id} value={s.store_id}>
-                      {s.store_id} — {s.store_name || "Store"}
-                    </MenuItem>
-                  ))
-                )}
-              </TextField>
-            </Grid>
+    <Box gap={3} sx={{ display: "flex", flexDirection: "column" }}>
+      <Typography variant="h6" fontWeight={600}>
+        Purchase Return
+      </Typography>
+      <Divider />
 
-            {/* Store */}
-            <Grid item xs={12} sm={4}>
-              <TextField
-                select
-                label="Store"
-                name="store_id"
-                value={header.store_id}
-                onChange={handleHeaderChange}
-                fullWidth
-                disabled={editMode}
-                size="small"
-                required
-              >
-                {loadingStores ? (
-                  <MenuItem disabled>Loading...</MenuItem>
-                ) : stores.length === 0 ? (
-                  <MenuItem disabled>No stores found</MenuItem>
-                ) : (
-                  stores.map((s) => (
-                    <MenuItem key={s.store_id} value={s.store_id}>
-                      {s.store_name || `Store #${s.store_id}`}
-                    </MenuItem>
-                  ))
-                )}
-              </TextField>
-            </Grid>
+      {/* HEADER */}
+      <Box display="flex" gap={2}>
+        <TextField
+          select
+          label="Purchase ID"
+          name="purchase_id"
+          value={header.purchase_id}
+          onChange={handleHeaderChange}
+          fullWidth
+          size="small"
+        >
+          {purchaseList.map((p) => (
+            <MenuItem key={p.purchase_id} value={p.purchase_id}>
+              {p.purchase_id} — {p.invoice_no}
+            </MenuItem>
+          ))}
+        </TextField>
 
-            {/* Return Date */}
-            <Grid item xs={12} sm={4}>
-              <TextField
-                label="Return Date"
-                name="return_date"
-                value={header.return_date}
-                onChange={handleHeaderChange}
-                type="date"
-                fullWidth
-                size="small"
-                InputLabelProps={{ shrink: true }}
-                required
-              />
-            </Grid>
+        <TextField
+          select
+          label="Store"
+          name="store_id"
+          value={header.store_id}
+          onChange={handleHeaderChange}
+          fullWidth
+          size="small"
+        >
+          {storeList.map((s) => (
+            <MenuItem key={s.store_id} value={s.store_id}>
+              {s.store_name}
+            </MenuItem>
+          ))}
+        </TextField>
 
-            {/* Overall Reason / Note */}
-            <Grid item xs={12}>
-              <TextField
-                label="Overall Note (Optional)"
-                name="reason"
-                value={header.reason}
-                onChange={handleHeaderChange}
-                fullWidth
-                multiline
-                minRows={2}
-                maxRows={4}
-                size="small"
-                placeholder="Any general note for this return (optional)"
-              />
-            </Grid>
-          </Grid>
+        <TextField
+          type="date"
+          label="Return Date"
+          name="return_date"
+          value={header.return_date}
+          onChange={handleHeaderChange}
+          fullWidth
+          size="small"
+          InputLabelProps={{ shrink: true }}
+        />
+      </Box>
+
+      <TextField
+        label="Overall Reason"
+        name="reason"
+        fullWidth
+        multiline
+        minRows={2}
+        value={header.reason}
+        onChange={handleHeaderChange}
+        size="small"
+      />
+
+      {/* ITEMS TABLE */}
+      <Box mt={3}>
+        <Box display="flex" justifyContent="space-between">
+          <Typography fontWeight={600}>Return Items</Typography>
+          <IconButton onClick={handleAddRow}>
+            <AddCircleOutline />
+          </IconButton>
         </Box>
+        <Divider />
 
-        {/* Items Table */}
-        <Box>
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-              Return Items
-            </Typography>
-            <Tooltip title="Add Item">
-              <IconButton onClick={handleAddRow} size="small">
-                <AddCircleOutline />
-              </IconButton>
-            </Tooltip>
-          </Box>
-          <Divider />
+        <Paper sx={{ mt: 1, maxHeight: 350, overflow: "auto" }}>
+          <Table size="small" stickyHeader>
+            <TableHead>
+              <TableRow>
+                <TableCell>Item</TableCell>
+                <TableCell>Batch</TableCell>
+                <TableCell>Qty</TableCell>
+                <TableCell>Rate</TableCell>
+                <TableCell>Amount</TableCell>
+                <TableCell>Expiry</TableCell>
+                <TableCell>Action</TableCell>
+              </TableRow>
+            </TableHead>
 
-          <Paper
-            variant="outlined"
-            sx={{ mt: 1, maxHeight: 360, overflow: "auto" }}
-          >
-            <Table size="small" stickyHeader>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ minWidth: 200 }}>Item</TableCell>
-                  <TableCell sx={{ minWidth: 120 }}>Batch No.</TableCell>
-                  <TableCell sx={{ minWidth: 80 }}>Qty</TableCell>
-                  <TableCell sx={{ minWidth: 100 }}>Rate</TableCell>
-                  <TableCell sx={{ minWidth: 120 }}>Amount</TableCell>
-                  <TableCell sx={{ minWidth: 160 }}>Reason</TableCell>
-                  <TableCell sx={{ minWidth: 140 }}>Expiry Date</TableCell>
-                  <TableCell sx={{ width: 60 }} align="center">
-                    Action
+            <TableBody>
+              {rows.map((row, index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    <TextField
+                      select
+                      size="small"
+                      fullWidth
+                      value={row.item_id}
+                      onChange={(e) =>
+                        handleRowChange(index, "item_id", e.target.value)
+                      }
+                    >
+                      {purchaseItems
+                        .filter((i) => i.purchase_id == header.purchase_id)
+                        .map((item) => (
+                          <MenuItem key={item.item_id} value={item.item_id}>
+                            {getItemName(item.item_id)}
+                          </MenuItem>
+                        ))}
+                    </TextField>
+
+                  </TableCell>
+
+                  <TableCell>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      value={row.batch_no}
+                      onChange={(e) =>
+                        handleRowChange(index, "batch_no", e.target.value)
+                      }
+                    />
+                  </TableCell>
+
+                  <TableCell>
+                    <TextField
+                      type="number"
+                      size="small"
+                      fullWidth
+                      value={row.qty}
+                      onChange={(e) =>
+                        handleRowChange(index, "qty", e.target.value)
+                      }
+                    />
+                  </TableCell>
+
+                  <TableCell>
+                    <TextField
+                      type="number"
+                      size="small"
+                      fullWidth
+                      value={row.rate}
+                      onChange={(e) =>
+                        handleRowChange(index, "rate", e.target.value)
+                      }
+                    />
+                  </TableCell>
+
+                  <TableCell>
+                    <TextField size="small" fullWidth value={row.amount} />
+                  </TableCell>
+
+                
+
+                  <TableCell>
+                    <TextField
+                      type="date"
+                      size="small"
+                      fullWidth
+                      value={row.expiry_date}
+                      onChange={(e) =>
+                        handleRowChange(index, "expiry_date", e.target.value)
+                      }
+                      InputLabelProps={{ shrink: true }}
+                    />
+                  </TableCell>
+
+                  <TableCell>
+                    <IconButton
+                      onClick={() => handleRemoveRow(index)}
+                      disabled={rows.length === 1}
+                    >
+                      <DeleteOutline />
+                    </IconButton>
                   </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {rows.map((row, index) => (
-                  <TableRow key={index}>
-                    {/* Item */}
-                    <TableCell>
-                      <TextField
-                        select
-                        name="item_id"
-                        value={row.item_id}
-                        onChange={(e) =>
-                          handleRowChange(index, "item_id", e.target.value)
-                        }
-                        fullWidth
-                        size="small"
-                        required
-                      >
-                        {loadingItems ? (
-                          <MenuItem disabled>Loading...</MenuItem>
-                        ) : items.length === 0 ? (
-                          <MenuItem disabled>No items found</MenuItem>
-                        ) : (
-                          items.map((i) => (
-                            <MenuItem key={i.item_id} value={i.item_id}>
-                              {i.item_name || `Item #${i.item_id}`}
-                            </MenuItem>
-                          ))
-                        )}
-                      </TextField>
-                    </TableCell>
+              ))}
+            </TableBody>
 
-                    {/* Batch */}
-                    <TableCell>
-                      <TextField
-                        name="batch_no"
-                        value={row.batch_no}
-                        onChange={(e) =>
-                          handleRowChange(index, "batch_no", e.target.value)
-                        }
-                        fullWidth
-                        size="small"
-                      />
-                    </TableCell>
-
-                    {/* Qty */}
-                    <TableCell>
-                      <TextField
-                        name="qty"
-                        type="number"
-                        value={row.qty}
-                        onChange={(e) =>
-                          handleRowChange(index, "qty", e.target.value)
-                        }
-                        fullWidth
-                        size="small"
-                        inputProps={{ min: 0, step: "1" }}
-                      />
-                    </TableCell>
-
-                    {/* Rate */}
-                    <TableCell>
-                      <TextField
-                        name="rate"
-                        type="number"
-                        value={row.rate}
-                        onChange={(e) =>
-                          handleRowChange(index, "rate", e.target.value)
-                        }
-                        fullWidth
-                        size="small"
-                        inputProps={{ min: 0, step: "0.01" }}
-                      />
-                    </TableCell>
-
-                    {/* Amount */}
-                    <TableCell>
-                      <TextField
-                        name="amount"
-                        type="number"
-                        value={row.amount}
-                        onChange={(e) =>
-                          handleRowChange(index, "amount", e.target.value)
-                        }
-                        fullWidth
-                        size="small"
-                        inputProps={{ min: 0, step: "0.01" }}
-                      />
-                    </TableCell>
-
-                    {/* Reason per item */}
-                    <TableCell>
-                      <TextField
-                        select
-                        name="reason"
-                        value={row.reason}
-                        onChange={(e) =>
-                          handleRowChange(index, "reason", e.target.value)
-                        }
-                        fullWidth
-                        size="small"
-                      >
-                        <MenuItem value="">Select reason</MenuItem>
-                        <MenuItem value="expired">Expired</MenuItem>
-                        <MenuItem value="damaged">Damaged</MenuItem>
-                        <MenuItem value="near_expiry">Near Expiry</MenuItem>
-                        <MenuItem value="wrong_item">
-                          Wrong Item Supplied
-                        </MenuItem>
-                        <MenuItem value="others">Others</MenuItem>
-                      </TextField>
-                    </TableCell>
-
-                    {/* Expiry Date per item */}
-                    <TableCell>
-                      <TextField
-                        type="date"
-                        name="expiry_date"
-                        value={row.expiry_date}
-                        onChange={(e) =>
-                          handleRowChange(index, "expiry_date", e.target.value)
-                        }
-                        fullWidth
-                        size="small"
-                        InputLabelProps={{ shrink: true }}
-                      />
-                    </TableCell>
-
-                    {/* Delete row */}
-                    <TableCell align="center">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleRemoveRow(index)}
-                        disabled={rows.length === 1}
-                      >
-                        <DeleteOutline fontSize="small" />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Paper>
-        </Box>
-
-        {/* Amount Summary */}
-        <Box>
-          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-            Amount Summary
-          </Typography>
-          <Divider />
-          <Grid container spacing={2} mt={1} justifyContent="flex-end">
-            <Grid item xs={12} sm={4}>
-              <TextField
-                label="Total Return Amount"
-                name="total_amount"
-                value={header.total_amount}
-                onChange={handleHeaderChange}
-                type="number"
-                fullWidth
-                size="small"
-                inputProps={{ min: 0, step: "0.01" }}
-              />
-            </Grid>
-          </Grid>
-        </Box>
+          </Table>
+        </Paper>
       </Box>
-    </DraggableDialog>
+
+      {/* TOTAL */}
+      <Box mt={2}>
+        <Grid container justifyContent="flex-end">
+          <Grid item xs={4}>
+            <TextField
+              label="Total Amount"
+              fullWidth
+              value={header.total_amount}
+              size="small"
+            />
+          </Grid>
+        </Grid>
+      </Box>
+
+      {/* FOOTER */}
+      <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
+        <Button variant="outlined" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button variant="contained" onClick={handleSubmit}>
+          Submit Return
+        </Button>
+      </Box>
+    </Box>
   );
 }

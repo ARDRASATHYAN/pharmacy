@@ -21,6 +21,15 @@ export function usepurchaseitems() {
   });
 }
 
+export function usePurchaseById(id) {
+  return useQuery({
+    queryKey: ["purchase", id],
+    queryFn: () => purchaseService.getPurchaseById(id),
+    enabled: !!id
+  });
+}
+
+
 export function useAddpurchaseinvoice() {
   const queryClient = useQueryClient();
   return useMutation({

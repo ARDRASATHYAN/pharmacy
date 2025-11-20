@@ -16,6 +16,8 @@ import PurchaseReturnMockApiHeader from "./pages/purchase_return";
 import AddPurchaseForm from "./pages/purchase_invoices/components/AddPurchase";
 import PurchaseReturnForm from "./pages/purchase_return/components/PurchaseReturnForm";
 import PurchaseREturnItemMockApiHeader from "./pages/purchasereturnitems";
+import SalesForm from "./pages/sales_invioces/component/SalesForm";
+import AddSalesReturnForm from "./pages/sales_return/components/AddSalesReturnForm";
 
 
 
@@ -47,6 +49,8 @@ function App() {
           <Route path="/return/addpurchasereturn" element={<PurchaseReturnForm />} />
           <Route path="/purchase/purchacereturn" element={<PurchaseReturnMockApiHeader />} />
           <Route path="/return/returnitem" element={<PurchaseREturnItemMockApiHeader />} />
+           <Route path="/sales" element={<SalesForm />} />
+            <Route path="/salesreturn" element={<AddSalesReturnForm />} />
 
 
         </Route>

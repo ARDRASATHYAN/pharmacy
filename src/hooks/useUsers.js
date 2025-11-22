@@ -1,7 +1,7 @@
 import userService from "@/services/userService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-// ✅ Get all users with optional filters
+// Get all users with optional filters
 export function useUsers({ search, role, is_active } = {}) {
   return useQuery({
     queryKey: ["users",search, role, is_active],
@@ -13,7 +13,7 @@ export function useUsers({ search, role, is_active } = {}) {
 
 
 
-// ✅ Add user
+//Add user
 export function useAddUser() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -22,7 +22,7 @@ export function useAddUser() {
   });
 }
 
-// ✅ Get single user by ID
+// Get single user by ID
 export function useSingleUser(id) {
   return useQuery({
     queryKey: ["user", id],
@@ -31,7 +31,7 @@ export function useSingleUser(id) {
   });
 }
 
-// ✅ Update user
+//Update user
 export function useUpdateUser() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -40,7 +40,7 @@ export function useUpdateUser() {
   });
 }
 
-// ✅ Delete user
+//Delete user
 export function useDeleteUser() {
   const queryClient = useQueryClient();
   return useMutation({

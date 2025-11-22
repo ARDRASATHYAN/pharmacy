@@ -14,7 +14,7 @@ export default function User() {
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
 
- const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -181,7 +181,7 @@ export default function User() {
       />
 
 
-       {/*Delete confirmation dialog */}
+      {/*Delete confirmation dialog */}
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Delete User"

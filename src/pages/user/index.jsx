@@ -1,34 +1,32 @@
+// src/pages/user/index.jsx
 import React, { useState } from "react";
 import { Box, Button } from "@mui/material";
 import UserForm from "./components/UserForm";
 import { getUserColumns } from "./components/Userheader";
 import BasicTable from "@/components/commen/BasicTable";
-import { useAddUser, useDeleteUser, useUpdateUser, useUsers } from "@/hooks/useUsers";
+import {
+  useAddUser,
+  useDeleteUser,
+  useUpdateUser,
+  useUsers,
+} from "@/hooks/useUsers";
 import UserFilter from "./components/UserFilter";
 import { showErrorToast, showSuccessToast } from "@/lib/toastService";
 import ConfirmDialog from "@/components/commen/ConfirmDialog";
 
-
 export default function User() {
-
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
-
-  const [formData, setFormData] = useState({
-    username: "",
-    password: "",
-    full_name: "",
-    role: "Billing",
-    is_active: true,
-  });
 
   const [filters, setFilters] = useState({
     search: "",
     role: "",
     is_active: "",
+    page: 1,
   });
 
   const { data, isLoading } = useUsers(filters);
@@ -36,42 +34,28 @@ export default function User() {
   const updateUser = useUpdateUser();
   const deleteUser = useDeleteUser();
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-
-  //  Add or Update
-  const handleSubmit = () => {
-    if (editMode) {
+  // Add or Update
+  const handleSubmit = (payload) => {
+    if (editMode && editingUser?.user_id) {
       updateUser.mutate(
-        { id: formData.user_id, data: formData },
+        { id: editingUser.user_id, data: payload },
         {
           onSuccess: () => {
             showSuccessToast("User updated successfully");
             setOpen(false);
             setEditMode(false);
+            setEditingUser(null);
           },
           onError: (error) => {
             console.error(error);
-            showErrorToast("error");
+            showErrorToast("Failed to update user");
           },
         }
       );
     } else {
-      addUser.mutate(formData, {
+      addUser.mutate(payload, {
         onSuccess: () => {
           showSuccessToast("User created successfully");
-          setOpen(true);
-          setEditMode(false);
-          setFormData({
-            username: "",
-            password: "",
-            full_name: "",
-            role: "Billing",
-            is_active: true,
-          });
         },
         onError: (error) => {
           console.error(error);
@@ -81,23 +65,22 @@ export default function User() {
     }
   };
 
-
   // Edit Handler
   const handleEdit = (row) => {
-    setFormData(row);
+    console.log(row,"row");
+    
+    setEditingUser(row);
     setEditMode(true);
     setOpen(true);
   };
 
-
-
-  // Delete Handler
+  // Delete Handler – open confirm dialog
   const handleDelete = (id) => {
     setSelectedUserId(id);
     setDeleteDialogOpen(true);
   };
 
-  //  Confirm delete
+  //Confirm delete
   const confirmDelete = () => {
     if (!selectedUserId) return;
 
@@ -115,33 +98,31 @@ export default function User() {
     });
   };
 
-
-
-
   const columns = getUserColumns(handleEdit, handleDelete);
-
-
 
   const handlePageChange = (page) => {
     setFilters((prev) => ({ ...prev, page }));
   };
-
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters((prev) => ({ ...prev, [name]: value, page: 1 }));
   };
 
-
   return (
     <>
       <h2 className="text-xl font-bold text-blue-700 tracking-wide p-0">
         User List
       </h2>
+
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        {/*  Search */}
+        {/* Search */}
         <Box>
-          <UserFilter filters={filters} onFilterChange={handleFilterChange} searchOnly />
+          <UserFilter
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            searchOnly
+          />
         </Box>
 
         {/* Filters and Add button */}
@@ -154,7 +135,7 @@ export default function User() {
             onClick={() => {
               setOpen(true);
               setEditMode(false);
-              setFormData({ username: "", password: "", full_name: "", role: "Billing", is_active: true });
+              setEditingUser(null);
             }}
           >
             Add User
@@ -162,26 +143,29 @@ export default function User() {
         </Box>
       </Box>
 
-      {/* table */}
-      <BasicTable columns={columns} data={data?.data || []} loading={isLoading} pagination={data?.pagination}
-        onPageChange={handlePageChange} />
+      {/* Table */}
+      <BasicTable
+        columns={columns}
+        data={data?.data || []}
+        loading={isLoading}
+        pagination={data?.pagination}
+        onPageChange={handlePageChange}
+      />
 
-      {/* Add UserForm Dialog */}
+      {/* Add / Edit User Dialog */}
       <UserForm
         open={open}
         onClose={() => {
           setOpen(false);
           setEditMode(false);
+          setEditingUser(null);
         }}
         onSubmit={handleSubmit}
-        formData={formData}
-        onChange={handleChange}
-
+        defaultValues={editingUser}
         editMode={editMode}
       />
 
-
-      {/*Delete confirmation dialog */}
+      {/* Delete confirmation dialog */}
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Delete User"

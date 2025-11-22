@@ -9,8 +9,8 @@ import { storeSchema } from "../validation/storeSchema";
 export default function StoreForm({
   open,
   onClose,
-  onSubmit,   // will receive validated values
-  defaultValues, // for edit mode – a single store object or null
+  onSubmit,   
+  defaultValues, 
   editMode,
 }) {
   const {

@@ -24,7 +24,7 @@ export default function StoreMockApiHeader() {
   const [editingStore, setEditingStore] = useState(null);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [selectedStoreId, setSelectedStoreId] = useState(null);
+  const [selectedStoreId, setSelectedStoreId] = useState(null);
 
   // Add or Update 
   const handleSubmit = (values) => {
@@ -48,7 +48,6 @@ export default function StoreMockApiHeader() {
       addStore.mutate(values, {
         onSuccess: () => {
           showSuccessToast("Store created successfully");
-          resolve(true);
         },
         onError: (error) => {
           console.error(error);
@@ -68,29 +67,29 @@ export default function StoreMockApiHeader() {
 
 
   // Delete Handler – open confirm dialog
-   const handleDelete = (id) => {
-     setSelectedStoreId(id);
-     setDeleteDialogOpen(true);
-   };
- 
-   //Confirm delete
-   const confirmDelete = () => {
-     if (!selectedStoreId) return;
- 
-     deleteStore.mutate(selectedStoreId, {
-       onSuccess: () => {
-         showSuccessToast("Store deleted successfully");
-         setDeleteDialogOpen(false);
-         setSelectedStoreId(null);
-       },
-       onError: (error) => {
-         console.error(error);
-         showErrorToast("Failed to delete Store");
-         setDeleteDialogOpen(false);
-       },
-     });
-   };
- 
+  const handleDelete = (id) => {
+    setSelectedStoreId(id);
+    setDeleteDialogOpen(true);
+  };
+
+  //Confirm delete
+  const confirmDelete = () => {
+    if (!selectedStoreId) return;
+
+    deleteStore.mutate(selectedStoreId, {
+      onSuccess: () => {
+        showSuccessToast("Store deleted successfully");
+        setDeleteDialogOpen(false);
+        setSelectedStoreId(null);
+      },
+      onError: (error) => {
+        console.error(error);
+        showErrorToast("Failed to delete Store");
+        setDeleteDialogOpen(false);
+      },
+    });
+  };
+
 
   const columns = getStoreColumns(handleEdit, handleDelete);
 
@@ -140,7 +139,7 @@ export default function StoreMockApiHeader() {
       />
 
 
-       {/* Delete confirmation dialog */}
+      {/* Delete confirmation dialog */}
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Delete User"

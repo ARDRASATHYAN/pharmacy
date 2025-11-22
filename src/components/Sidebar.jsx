@@ -1,28 +1,11 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard,
-  Users,
-  Store,
-  BadgePercent,
-  Pill,
-  ClipboardList,
-  Truck,
-  ShoppingCart,
-  RotateCcw,
-  ArrowRightLeft,
-  Package,
-  PackageX,
-  Boxes,
-  User,
   LogOut,
   ChevronDown,
   ChevronRight,
-  Menu,
-  X,
 } from "lucide-react";
-
-
+import { navigationItems } from "@/config/navigation";
 
 function cn(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -34,105 +17,6 @@ export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
 
- const navigationItems = [
-  // Dashboard
-  { icon: <LayoutDashboard size={18} />, name: "Dashboard", href: "/dashboard" },
-
-  // Master data
-  { icon: <Users size={18} />, name: "Staff", href: "/staff" },
-  { icon: <Store size={18} />, name: "Store", href: "/store" },
-  { icon: <BadgePercent size={18} />, name: "HSN", href: "/Hsn" },
-  { icon: <Pill size={18} />, name: "Drug Schedule", href: "/drug" },
-  { icon: <ClipboardList size={18} />, name: "Items", href: "/items" },
-  { icon: <Truck size={18} />, name: "Supplier", href: "/supplier" },
-
-  // Purchase
-  {
-    icon: <ShoppingCart size={18} />,
-    name: "Purchase",
-    href: "/purchase/purchaceinvoice",
-    subLinks: [
-      { name: "Add Purchase", href: "/purchase/addpurchase" },
-      { name: "View Invoice", href: "/purchase/purchaceinvoice" },
-      { name: "View Purchase Item", href: "/purchase/purchaceitem" },
-    ],
-  },
-
-  // Purchase Return
-  {
-    icon: <RotateCcw size={18} />,
-    name: "Purchase Return",
-    href: "/return/purchacereturn",
-    subLinks: [
-      { name: "Add Return", href: "/return/addpurchasereturn" },
-      { name: "View Return", href: "/purchase/purchacereturn" },
-      { name: "View Return Item", href: "/return/returnitem" },
-    ],
-  },
-
-  // Sales
-  {
-    icon: <ArrowRightLeft size={18} />,
-    name: "Sales",
-    href: "/sales/add",
-    subLinks: [
-      { name: "Add Sales", href: "/sales/add" },
-      { name: "View Sales", href: "/sales/list" },
-      { name: "View Sales Item", href: "/sales/items" },
-    ],
-  },
-
-  // Sales Return
-  {
-    icon: <RotateCcw size={18} />,
-    name: "Sales Return",
-    href: "/salesreturn/add",
-    subLinks: [
-      { name: "Add Sales Return", href: "/salesreturn/add" },
-      { name: "View Sales Return", href: "/salesreturn/list" },
-      { name: "View Sales Return Item", href: "/salesreturn/items" },
-    ],
-  },
-
-  // Damaged stock
-  {
-    icon: <PackageX size={18} />,
-    name: "Damaged Stock",
-    href: "/damaged/add",
-    subLinks: [
-      { name: "Add Damaged Stock", href: "/damaged/add" },
-      { name: "View Damaged Stock", href: "/damaged/list" },
-    ],
-  },
-
-  // Excess stock
-  {
-    icon: <Boxes size={18} />,
-    name: "Excess Stock",
-    href: "/excess/add",
-    subLinks: [
-      { name: "Add Excess Stock", href: "/excess/add" },
-      { name: "View Excess Stock", href: "/excess/list" },
-    ],
-  },
-
-  // Stock
-  {
-    icon: <Package size={18} />,
-    name: "Stock",
-    href: "/stock",
-  },
-
-  // Customers
-  {
-    icon: <User size={18} />,
-    name: "Customer",
-    href: "/customers",
-  },
-];
-
-
-  // Wider on desktop, but still usable collapsed
   const sidebarWidth = isExpanded ? "w-64" : "w-16";
 
   const handleLogout = () => {
@@ -140,8 +24,8 @@ export default function Sidebar() {
     navigate("/");
   };
 
-  const toggleSubmenu = (name) => {
-    setOpenSubmenu((prev) => (prev === name ? null : name));
+  const toggleSubmenu = (key) => {
+    setOpenSubmenu((prev) => (prev === key ? null : key));
   };
 
   return (
@@ -149,7 +33,6 @@ export default function Sidebar() {
       {/* === Desktop / Tablet Sidebar === */}
       <nav
         className={cn(
-          // show from md and above, fixed full height
           "hidden md:flex fixed left-0 top-0 h-screen z-30 flex-col bg-white border-r border-gray-200 transition-all duration-300 ease-in-out",
           sidebarWidth
         )}
@@ -178,17 +61,21 @@ export default function Sidebar() {
         {/* Menu */}
         <ul className="flex-1 px-2 py-3 space-y-1 overflow-y-auto">
           {navigationItems.map((item) => {
+            const hasChildren = !!item.children?.length;
             const isActive =
               location.pathname === item.href ||
-              item.subLinks?.some((s) => s.href === location.pathname);
-            const isOpen = openSubmenu === item.name;
+              item.children?.some((c) => c.href === location.pathname);
+            const isOpen = openSubmenu === item.key;
+
+            // icon is a component (LayoutDashboard, Users, etc.)
+            const Icon = item.icon;
 
             return (
-              <li key={item.name}>
+              <li key={item.key}>
                 <div>
                   <button
                     onClick={() =>
-                      item.subLinks ? toggleSubmenu(item.name) : navigate(item.href)
+                      hasChildren ? toggleSubmenu(item.key) : navigate(item.href)
                     }
                     className={cn(
                       "flex items-center justify-between px-2 py-2 rounded-md w-full text-left text-sm transition-all",
@@ -198,15 +85,17 @@ export default function Sidebar() {
                     )}
                   >
                     <div className="flex items-center gap-3">
-                      <span className="text-xl flex-shrink-0">{item.icon}</span>
+                      <span className="text-xl flex-shrink-0">
+                        {Icon && <Icon size={18} />}
+                      </span>
                       {isExpanded && (
                         <span className="text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis">
-                          {item.name}
+                          {item.label}
                         </span>
                       )}
                     </div>
 
-                    {item.subLinks && isExpanded && (
+                    {hasChildren && isExpanded && (
                       <span className="ml-auto">
                         {isOpen ? (
                           <ChevronDown size={16} className="text-gray-500" />
@@ -218,12 +107,12 @@ export default function Sidebar() {
                   </button>
 
                   {/* Submenu */}
-                  {item.subLinks && isOpen && isExpanded && (
+                  {hasChildren && isOpen && isExpanded && (
                     <ul className="pl-9 mt-1 space-y-1 transition-all duration-200">
-                      {item.subLinks.map((sub) => {
+                      {item.children.map((sub) => {
                         const subActive = location.pathname === sub.href;
                         return (
-                          <li key={sub.name}>
+                          <li key={sub.key}>
                             <button
                               onClick={() => navigate(sub.href)}
                               className={cn(
@@ -233,7 +122,7 @@ export default function Sidebar() {
                                   : "text-gray-700 hover:bg-gray-100"
                               )}
                             >
-                              {sub.name}
+                              {sub.label}
                             </button>
                           </li>
                         );
@@ -261,13 +150,16 @@ export default function Sidebar() {
       {/* === Mobile Bottom Navbar === */}
       <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 bg-white border border-gray-200 shadow-lg rounded-full px-4 py-2 flex justify-around items-center w-[94%] max-w-[380px] md:hidden">
         {navigationItems.map((item) => {
+          const hasChildren = !!item.children?.length;
           const isActive =
             location.pathname === item.href ||
-            item.subLinks?.some((s) => s.href === location.pathname);
+            item.children?.some((c) => c.href === location.pathname);
+
+          const Icon = item.icon;
 
           return (
             <button
-              key={item.name}
+              key={item.key}
               onClick={() => navigate(item.href)}
               className="flex flex-col items-center justify-center text-center"
             >
@@ -277,7 +169,7 @@ export default function Sidebar() {
                   isActive ? "text-blue-600" : "text-gray-600"
                 )}
               >
-                {item.icon}
+                {Icon && <Icon size={18} />}
               </span>
               <span
                 className={cn(
@@ -285,9 +177,10 @@ export default function Sidebar() {
                   isActive ? "text-blue-600 font-medium" : "text-gray-700"
                 )}
               >
-                {item.name.length > 10
-                  ? item.name.slice(0, 9) + "…"
-                  : item.name}
+                {(() => {
+                  const label = item?.label || "";
+                  return label.length > 10 ? label.slice(0, 9) + "…" : label;
+                })()}
               </span>
             </button>
           );

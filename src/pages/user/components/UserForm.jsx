@@ -11,7 +11,6 @@ import DraggableDialog from "../../../components/commen/DraggableDialog";
 import { useRoles } from "@/hooks/useRoles";
 
 
-// const roles = ["Admin", "Manager", "Pharmacist", "Billing", "StoreKeeper"];
 
 export default function UserForm({
   open,
@@ -89,7 +88,7 @@ export default function UserForm({
   control={
     
     <Switch
-      checked={!!formData.is_active} // converts any truthy/falsy value to real boolean
+      checked={!!formData.is_active}
       onChange={(e) =>
         onChange({
           target: { name: "is_active", value: e.target.checked ? 1 : 0 },
@@ -97,7 +96,7 @@ export default function UserForm({
       }
     />
   }
-  label={formData.is_active ? "Active" : "Inactive"} // will now work properly
+  label={formData.is_active ? "Active" : "Inactive"} 
 />
 
       </Box>

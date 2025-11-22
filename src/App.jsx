@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
-import UserMockApiHeader from "./pages/user";
 import StoreMockApiHeader from "./pages/store";
 import HsnMockApiHeader from "./pages/hsn";
 import DrugScheduleMockApiHeader from "./pages/drug_schedule";
@@ -26,6 +25,9 @@ import AddDamagedStockForm from "./pages/damanagedstock/components/AddDamagedSto
 import DamagedStockMockApiHeader from "./pages/damanagedstock";
 import AddExcessStockForm from "./pages/exceedstock/component/AddExcessFrom";
 import ExcessStockMockApiHeader from "./pages/exceedstock";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import User from "./pages/user";
 
 
 
@@ -41,7 +43,7 @@ function App() {
 
           <Route path="/dashboard" element={<Dashboard />} />
 
-          <Route path="/staff" element={< UserMockApiHeader />} />
+          <Route path="/staff" element={< User />} />
           <Route path="/store" element={< StoreMockApiHeader />} />
           <Route path="/hsn" element={< HsnMockApiHeader />} />
           <Route path="/drug" element={< DrugScheduleMockApiHeader />} />
@@ -79,11 +81,24 @@ function App() {
 
           <Route path="/excess/add" element={< AddExcessStockForm />} />
           <Route path="/excess/list" element={< ExcessStockMockApiHeader />} />
-
+ 
 
         </Route>
       </Routes>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}          // default auto close time
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick               // click to close
+        rtl={false}
+        pauseOnFocusLoss           // ⬅ pause when window/tab loses focus
+        draggable                  // ⬅ allow drag & close
+        pauseOnHover               // ⬅ pause when mouse over toast
+        theme="colored"            // "light" | "dark" | "colored"
+      />
     </BrowserRouter>
+    
   );
 }
 

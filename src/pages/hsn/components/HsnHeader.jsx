@@ -21,10 +21,10 @@ export const getHsnColumns = (onEdit, onDelete) => [
         header: "gst_rate",
         accessorKey: "gst_percent",
     },
-    {
-        header: "created_at",
-        accessorKey: "created_at"
-    },
+    // {
+    //     header: "created_at",
+    //     accessorKey: "created_at"
+    // },
   
 
    {

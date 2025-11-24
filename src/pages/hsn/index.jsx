@@ -5,65 +5,102 @@ import { getHsnColumns } from "./components/HsnHeader";
 import HsnForm from "./components/HsnForm";
 import BasicTable from "@/components/commen/BasicTable";
 import { useAddHsn, useDeleteHsn, useHsn, useUpdateHsn } from "@/hooks/useHsn";
+import { showErrorToast, showSuccessToast } from "@/lib/toastService";
+import ConfirmDialog from "@/components/commen/ConfirmDialog";
 
 
 export default function HsnMockApiHeader() {
- const { data: hsns = [], isLoading,isFetching } = useHsn();
-   const addHsn = useAddHsn();
-   const updateHsn = useUpdateHsn();
-   const deleteHsn = useDeleteHsn();
- 
-   const [open, setOpen] = useState(false);
-   const [editMode, setEditMode] = useState(false);
-   const [formData, setFormData] = useState({
-     hsn_code:"", description:"", gst_percent:""
-   });
- 
-   const handleChange = (e) => {
-     const { name, value } = e.target;
-     setFormData((prev) => ({ ...prev, [name]: value }));
-   };
- 
-   // 🟢 Add or Update
-   const handleSubmit = () => {
-     if (editMode) {
-       updateHsn.mutate(
-         { id: formData.hsn_id, data: formData },
-         {
- 
-           onSuccess: () => setOpen(false),
-         }
-       );
-     } else {
-       addHsn.mutate(formData, {
-         onSuccess: () => setOpen(false),
-       });
-     }
-   };
- 
- 
-   
-   // ✏️ Edit Handler
- 
-   const handleEdit = (row) => {
- 
-     console.log("row",row);
-     
-     setFormData(row);
-     setEditMode(true);
-     setOpen(true);
-   };
- 
-   // ❌ Delete Handler
-   const handleDelete = (id) => {
-     if (window.confirm("Are you sure you want to delete this user?")) {
-       deleteHsn.mutate(id);
-     }
-   };
- 
- 
-  
- 
+  const { data: hsns = [], isLoading} = useHsn();
+  const addHsn = useAddHsn();
+  const updateHsn = useUpdateHsn();
+  const deleteHsn = useDeleteHsn();
+
+  const [open, setOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editingStore, setEditingStore] = useState(null);
+
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedHsnId, setSelectedHsnId] = useState(null);
+
+
+
+  const handleSubmit = (values, resetForm) => {
+    if (editMode && editingStore?.hsn_id) {
+      updateHsn.mutate(
+        { id: editingStore.hsn_id, data: values },
+        {
+          onSuccess: () => {
+            showSuccessToast("hsn updated successfully");
+            setOpen(false);
+            setEditMode(false);
+            setEditingStore(null);
+          },
+          onError: (error) => {
+            console.error(error);
+            showErrorToast("Failed to update hsn");
+          },
+        }
+      );
+    } else {
+      // ADD MODE: keep dialog open but clear the fields
+      addHsn.mutate(values, {
+        onSuccess: () => {
+          showSuccessToast("Store created successfully");
+          if (typeof resetForm === "function") {
+            resetForm(); // this clears form fields
+          }
+        },
+        onError: (error) => {
+          console.error(error);
+          showErrorToast("Failed to create Store");
+        },
+      });
+    }
+  };
+
+  // 🟢 Add or Update
+
+
+
+  // ✏️ Edit Handler
+  const handleEdit = (row) => {
+    console.log("row", row);
+    setEditingStore(row);
+    setEditMode(true);
+    setOpen(true);
+  };
+
+
+  // Delete Handler – open confirm dialog
+  const handleDelete = (id) => {
+    setSelectedHsnId(id);
+    setDeleteDialogOpen(true);
+  };
+
+  //Confirm delete
+  const confirmDelete = () => {
+    if (!selectedHsnId) return;
+
+    deleteHsn.mutate(selectedHsnId, {
+      onSuccess: () => {
+        showSuccessToast("hsn deleted successfully");
+        setDeleteDialogOpen(false);
+        setSelectedHsnId(null);
+      },
+      onError: (error) => {
+        console.error(error);
+        showErrorToast("Failed to delete hsn");
+        setDeleteDialogOpen(false);
+      },
+    });
+  };
+
+
+
+
+
+
 
   // ✅ pass handlers to columns (so edit/delete buttons work)
   const columns = getHsnColumns(handleEdit, handleDelete);
@@ -71,23 +108,22 @@ export default function HsnMockApiHeader() {
   return (
     <>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-       <h2 className="text-xl font-bold text-blue-700 tracking-wide">
-            HSN List
-          </h2>
+        <h2 className="text-xl font-bold text-blue-700 tracking-wide">
+          HSN List
+        </h2>
         <Button variant="contained" color="primary" onClick={() => {
-    // 🧹 Clear previous data before opening
-    setFormData({
-     hsn_code:"", description:"", gst_percent:""
-    });
-    setEditMode(false);
-    setOpen(true);
-  }}>
+          // 🧹 Clear previous data before opening
+
+          setOpen(true);
+          setEditMode(false);
+          setEditingStore(null);
+        }}>
           Add HSN
         </Button>
       </div>
 
 
-  <BasicTable columns={columns} data={hsns} loading={isLoading || isFetching}/>
+      <BasicTable columns={columns} data={hsns} loading={isLoading} />
 
 
       <HsnForm
@@ -95,11 +131,27 @@ export default function HsnMockApiHeader() {
         onClose={() => {
           setOpen(false);
           setEditMode(false);
+          setEditingStore(null);
         }}
         onSubmit={handleSubmit}
-        formData={formData}
-        onChange={handleChange}
+        defaultValues={editingStore}
         editMode={editMode}
+      />
+
+
+      {/* Delete confirmation dialog */}
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        title="Delete Hsn"
+        description="Are you sure you want to delete this hsn? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmColor="error"
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setDeleteDialogOpen(false);
+          setSelectedHsnId(null);
+        }}
       />
     </>
   );

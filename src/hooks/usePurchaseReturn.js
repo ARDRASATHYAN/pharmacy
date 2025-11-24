@@ -1,23 +1,34 @@
 import apiClient from "@/services/apiClient";
-import { useQuery } from "@tanstack/react-query";
+import purchaseReturnService from "@/services/purchaseReturnService";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 
 export function usePurchaseReturnList() {
   return useQuery({
     queryKey: ["purchase-return-list"],
-    queryFn: async () => {
-      const res = await apiClient.get("/purchasereturn");
-      return res.data;
-    }
+    queryFn: purchaseReturnService.getPurchaseReturnList,
   });
 }
 
-export function usepurchasereturnitems() {
+
+// 🔹 Create purchase return
+export function useCreatePurchaseReturn() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: purchaseReturnService.createPurchaseReturn,
+    onSuccess: () => {
+      // ✅ correctly invalidate queries
+      queryClient.invalidateQueries({ queryKey: ["purchase-return-list"] });
+      queryClient.invalidateQueries({ queryKey: ["purchasereturnitem"] });
+    },
+  });
+}
+
+// 🔹 List of purchase return items
+export function usePurchaseReturnItems() {
   return useQuery({
     queryKey: ["purchasereturnitem"],
-   queryFn: async () => {
-      const res = await apiClient.get("/purchasereturn/items");
-      return res.data;
-    }
+    queryFn: purchaseReturnService.getPurchaseReturnItems,
   });
 }

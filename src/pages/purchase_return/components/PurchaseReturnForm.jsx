@@ -24,6 +24,8 @@ import apiClient from "@/services/apiClient";
 import { useStores } from "@/hooks/useStore";
 import { usepurchaseitems } from "@/hooks/usePurchaseInvoice";
 import { useitem } from "@/hooks/useItem";
+import { useCreatePurchaseReturn } from "@/hooks/usePurchaseReturn";
+import { showErrorToast, showSuccessToast } from "@/lib/toastService";
 
 const emptyItemRow = {
   item_id: "",
@@ -54,6 +56,9 @@ export default function PurchaseReturnForm({ onClose, onSubmit, editMode }) {
 
   const { data: currentUser } = useCurrentUser();
 
+
+  const addpurchasereturn=useCreatePurchaseReturn()
+
   // ------------------------------
   // STATES
   // ------------------------------
@@ -72,39 +77,23 @@ export default function PurchaseReturnForm({ onClose, onSubmit, editMode }) {
   // AUTO-FILL STORE + ITEMS WHEN PURCHASE SELECTED
   // ------------------------------
 
-  useEffect(() => {
-    if (!header.purchase_id) return;
+useEffect(() => {
+  if (!header.purchase_id) return;
 
-    // 1️⃣ Auto-fill store ID
-    const selectedPurchase = purchaseList.find(
-      (p) => p.purchase_id == header.purchase_id
-    );
+  const selectedPurchase = purchaseList.find(
+    (p) => p.purchase_id == header.purchase_id
+  );
 
-    if (selectedPurchase) {
-      setHeader((prev) => ({
-        ...prev,
-        store_id: selectedPurchase.store_id,
-      }));
-    }
-
-    // 2️⃣ Filter purchaseItems by selected purchase_id
-    const filtered = purchaseItems.filter(
-      (item) => item.purchase_id == header.purchase_id
-    );
-
-    // 3️⃣ Map purchase items to table rows
-    const mapped = filtered.map((item) => ({
-      item_id: item.item_id,
-      batch_no: item.batch_no,
-      qty: "",
-      rate: item.purchase_rate,
-      amount: "",
-      reason: "",
-      expiry_date: item.expiry_date,
+  if (selectedPurchase) {
+    setHeader((prev) => ({
+      ...prev,
+      store_id: selectedPurchase.store_id,
     }));
+  }
 
-    setRows(mapped);
-  }, [header.purchase_id, purchaseList, purchaseItems]);
+  // 🔁 DO NOT touch rows here
+}, [header.purchase_id, purchaseList]);
+
 
   // ------------------------------
   // HANDLERS
@@ -153,6 +142,20 @@ export default function PurchaseReturnForm({ onClose, onSubmit, editMode }) {
   // SUBMIT
   // ------------------------------
 
+
+  const resetForm = () => {
+  setHeader({
+    purchase_id: "",
+    store_id: "",
+    return_date: "",
+    reason: "",
+    total_amount: 0,
+  });
+
+  setRows([emptyItemRow]);
+};
+
+
   const handleSubmit = async () => {
     try {
       const payload = {
@@ -169,14 +172,20 @@ export default function PurchaseReturnForm({ onClose, onSubmit, editMode }) {
           item_reason: r.reason,
           expiry_date: r.expiry_date,
         })),
-      };
-
-      const res = await apiClient.post("/purchasereturn", payload);
-
-      if (onSubmit) onSubmit(res.data);
-      if (onClose) onClose();
+      }
+      addpurchasereturn.mutate(payload, {
+        onSuccess: () => {
+          showSuccessToast("Purchased return  items updated successfully");
+          resetForm();
+          onClose?.();
+        },
+        onError:(error)=>{
+          showErrorToast("purchasereturn not created")
+        }
+      });
     } catch (err) {
-      alert(err?.response?.data?.message || "Error submitting return.");
+     console.log(err);
+     
     }
   };
 
@@ -281,26 +290,45 @@ export default function PurchaseReturnForm({ onClose, onSubmit, editMode }) {
             <TableBody>
               {rows.map((row, index) => (
                 <TableRow key={index}>
-                  <TableCell>
-                    <TextField
-                      select
-                      size="small"
-                      fullWidth
-                      value={row.item_id}
-                      onChange={(e) =>
-                        handleRowChange(index, "item_id", e.target.value)
-                      }
-                    >
-                      {purchaseItems
-                        .filter((i) => i.purchase_id == header.purchase_id)
-                        .map((item) => (
-                          <MenuItem key={item.item_id} value={item.item_id}>
-                            {getItemName(item.item_id)}
-                          </MenuItem>
-                        ))}
-                    </TextField>
+                 <TableCell>
+  <TextField
+    select
+    size="small"
+    fullWidth
+    value={row.item_id}
+    onChange={(e) => {
+      const itemId = e.target.value;
+      handleRowChange(index, "item_id", itemId);
 
-                  </TableCell>
+      // Optional: auto-fill batch, rate, expiry from purchaseItems
+      const purchaseItem = purchaseItems.find(
+        (pi) =>
+          pi.purchase_id == header.purchase_id &&
+          pi.item_id == itemId
+      );
+
+      if (purchaseItem) {
+        const updated = [...rows];
+        updated[index] = {
+          ...updated[index],
+          batch_no: purchaseItem.batch_no || "",
+          rate: purchaseItem.purchase_rate || "",
+          expiry_date: purchaseItem.expiry_date || "",
+        };
+        setRows(updated);
+      }
+    }}
+  >
+    {purchaseItems
+      .filter((pi) => pi.purchase_id == header.purchase_id)
+      .map((pi) => (
+        <MenuItem key={pi.item_id} value={pi.item_id}>
+          {getItemName(pi.item_id)}
+        </MenuItem>
+      ))}
+  </TextField>
+</TableCell>
+
 
                   <TableCell>
                     <TextField

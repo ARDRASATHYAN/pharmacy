@@ -28,20 +28,27 @@ import { useitem } from "@/hooks/useItem";
 import { useSupplier } from "@/hooks/useSupplier";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { useAddpurchaseinvoice } from "@/hooks/usePurchaseInvoice";
+import { showErrorToast, showSuccessToast } from "@/lib/toastService";
+
+import { useForm, Controller, useFieldArray } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
+import { purchaseSchema } from "../validation/purchaseSchema";
 
 const emptyItemRow = {
   item_id: "",
   batch_no: "",
-  qty: "",          // auto-calculated
+  qty: "", // auto-calculated
   purchase_rate: "",
   mrp: "",
   gst_percent: "",
   discount_percent: "",
-  pack_qty:1,     // user input
-  pack_size: "",    // from item master
+  pack_qty: 1, // user input
+  pack_size: "", // from item master
   expiry_date: "",
   amount: "",
 };
+
 
 export default function AddPurchaseForm({ onClose }) {
   const { data: store = [], isLoading: loadingStore } = useStores();
@@ -56,80 +63,46 @@ export default function AddPurchaseForm({ onClose }) {
 
   const items = Array.isArray(itemsMaster) ? itemsMaster : [];
 
-  const [formData, setFormData] = useState({
-    store_id: "",
-    supplier_id: "",
-    created_by: "",
-    invoice_no: "",
-    invoice_date: null,
+  const {
+    control,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(purchaseSchema),
+    defaultValues: {
+      store_id: "",
+      supplier_id: "",
+      invoice_no: "",
+      invoice_date: null,
+      items: [emptyItemRow],
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "items",
+  });
+
+  // Watch items for totals & calcs
+  const watchedItems = watch("items") || [];
+
+  const [totals, setTotals] = useState({
     total_amount: 0,
     total_gst: 0,
     total_discount: 0,
     net_amount: 0,
-    items: [],
   });
 
-  const [rows, setRows] = useState([emptyItemRow]);
-
-  useEffect(() => {
-    setFormData((prev) => ({ ...prev, items: rows }));
-  }, [rows]);
+  const [createdBy, setCreatedBy] = useState("");
 
   useEffect(() => {
     if (currentUser && currentUser.user_id) {
-      setFormData((prev) => ({
-        ...prev,
-        created_by: prev.created_by || currentUser.user_id,
-      }));
+      setCreatedBy(currentUser.user_id);
     }
   }, [currentUser?.user_id]);
-
-  const handleHeaderChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleRowChange = (index, field, value) => {
-    setRows((prev) => {
-      const newRows = [...prev];
-      let row = { ...newRows[index], [field]: value };
-
-      // When user changes pack_qty → auto-calc qty
-      if (field === "pack_qty") {
-        const packQtyNum = parseFloat(value || 0);
-        const packSizeNum = parseFloat(row.pack_size || 0);
-        row.qty = packQtyNum * (isNaN(packSizeNum) ? 0 : packSizeNum);
-      }
-
-      // Recalculate amount
-      const qtyNum = parseFloat(row.qty || 0);
-      const rateNum = parseFloat(row.purchase_rate || 0);
-      let amount = qtyNum * rateNum;
-
-      const discPercent = parseFloat(row.discount_percent || 0);
-      if (!isNaN(discPercent) && discPercent > 0) {
-        amount = amount - (amount * discPercent) / 100;
-      }
-
-      row.amount = isNaN(amount) ? "" : amount.toFixed(2);
-
-      newRows[index] = row;
-      return newRows;
-    });
-  };
-
-  const handleAddRow = () => {
-    setRows((prev) => [...prev, emptyItemRow]);
-  };
-
-  const handleRemoveRow = (index) => {
-    setRows((prev) => {
-      if (prev.length === 1) return prev;
-      const newRows = [...prev];
-      newRows.splice(index, 1);
-      return newRows;
-    });
-  };
 
   // Totals calculation
   useEffect(() => {
@@ -137,7 +110,7 @@ export default function AddPurchaseForm({ onClose }) {
     let total_gst = 0;
     let total_discount = 0;
 
-    rows.forEach((r) => {
+    watchedItems.forEach((r) => {
       const qty = Number(r.qty || 0);
       const rate = Number(r.purchase_rate || 0);
       const discPercent = Number(r.discount_percent || 0);
@@ -157,59 +130,105 @@ export default function AddPurchaseForm({ onClose }) {
 
     const net_amount = total_amount + total_gst - total_discount;
 
-    setFormData((prev) => ({
-      ...prev,
+    setTotals({
       total_amount: total_amount.toFixed(2),
       total_gst: total_gst.toFixed(2),
       total_discount: total_discount.toFixed(2),
       net_amount: net_amount.toFixed(2),
-    }));
-  }, [rows]);
+    });
+  }, [watchedItems]);
 
-  const handleSubmit = () => {
-    if (!formData.store_id || !formData.supplier_id) {
-      alert("Store and Supplier are required");
-      return;
-    }
-    if (!rows.length || !rows.some((r) => r.item_id)) {
-      alert("Add at least one item with an Item selected");
-      return;
-    }
-    if (!currentUser?.user_id) {
-      alert("No logged in user found. Please login again.");
-      return;
-    }
+  const resetForm = () => {
+    reset({
+      store_id: "",
+      supplier_id: "",
+      invoice_no: "",
+      invoice_date: null,
+      items: [emptyItemRow],
+    });
+    setTotals({
+      total_amount: 0,
+      total_gst: 0,
+      total_discount: 0,
+      net_amount: 0,
+    });
+  };
+
+  const onSubmit = (data) => {
+    if (!currentUser?.user_id) return;
 
     const payload = {
-      store_id: Number(formData.store_id),
-      supplier_id: Number(formData.supplier_id),
+      store_id: Number(data.store_id),
+      supplier_id: Number(data.supplier_id),
       created_by: currentUser.user_id,
-      invoice_no: formData.invoice_no || undefined,
-      invoice_date: formData.invoice_date || undefined,
-      items: rows
+      invoice_no: data.invoice_no || undefined,
+      invoice_date: data.invoice_date || undefined,
+      items: (data.items || [])
         .filter((r) => r.item_id)
         .map((r) => ({
           item_id: Number(r.item_id),
           batch_no: r.batch_no || null,
           expiry_date: r.expiry_date || null,
-          qty: Number(r.qty || 0),          // ✅ auto-calculated
+          qty: Number(r.qty || 0),
           purchase_rate: Number(r.purchase_rate || 0),
           mrp: Number(r.mrp || 0),
           discount_percent: Number(r.discount_percent || 0),
           gst_percent: Number(r.gst_percent || 0),
-          pack_qty: Number(r.pack_qty || 0), // user input
+          pack_qty: Number(r.pack_qty || 0),
         })),
-      total_amount: Number(formData.total_amount || 0),
-      total_gst: Number(formData.total_gst || 0),
-      total_discount: Number(formData.total_discount || 0),
-      net_amount: Number(formData.net_amount || 0),
+      total_amount: Number(totals.total_amount || 0),
+      total_gst: Number(totals.total_gst || 0),
+      total_discount: Number(totals.total_discount || 0),
+      net_amount: Number(totals.net_amount || 0),
     };
 
     console.log("CREATE PAYLOAD:", payload);
 
     addpurchaseinvoice.mutate(payload, {
-      onSuccess: () => onClose?.(),
+      onSuccess: () => {
+        showSuccessToast("Purchased items updated successfully");
+        resetForm();
+        onClose?.();
+      },
+      onError:(error)=>{
+        showErrorToast("purchase not created")
+      }
     });
+  };
+
+  // Handle row changes with auto qty & amount
+  const handleItemChange = (index, field, value) => {
+    const current = [...(watch("items") || [])];
+    let row = { ...current[index], [field]: value };
+
+    if (field === "pack_qty") {
+      const packQtyNum = parseFloat(value || 0);
+      const packSizeNum = parseFloat(row.pack_size || 0);
+      row.qty = packQtyNum * (isNaN(packSizeNum) ? 0 : packSizeNum);
+    }
+
+    const qtyNum = parseFloat(row.qty || 0);
+    const rateNum = parseFloat(row.purchase_rate || 0);
+    let amount = qtyNum * rateNum;
+
+    const discPercent = parseFloat(row.discount_percent || 0);
+    if (!isNaN(discPercent) && discPercent > 0) {
+      amount = amount - (amount * discPercent) / 100;
+    }
+
+    row.amount = isNaN(amount) ? "" : amount.toFixed(2);
+
+    current[index] = row;
+    setValue("items", current, { shouldValidate: true });
+  };
+
+  const handleAddRow = () => {
+    append(emptyItemRow);
+  };
+
+  const handleRemoveRow = (index) => {
+    if (fields.length === 1) return;
+    remove(index);
   };
 
   return (
@@ -224,70 +243,107 @@ export default function AddPurchaseForm({ onClose }) {
         </Typography>
         <Divider />
         <Box display="flex" gap={3} mt={1}>
-          <TextField
-            label="Invoice No"
+          {/* Invoice No */}
+          <Controller
             name="invoice_no"
-            value={formData.invoice_no}
-            onChange={handleHeaderChange}
-            fullWidth
-            size="small"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Invoice No"
+                fullWidth
+                size="small"
+                error={!!errors.invoice_no}
+                helperText={errors.invoice_no?.message}
+              />
+            )}
           />
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <DatePicker
-              label="Invoice Date"
-              value={formData.invoice_date ? dayjs(formData.invoice_date) : null}
-              onChange={(newValue) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  invoice_date: newValue ? newValue.toISOString() : null,
-                }))
-              }
-              slotProps={{ textField: { fullWidth: true, size: "small", required: true } }}
-            />
-          </LocalizationProvider>
-          <TextField
-            select
-            label="Supplier"
+
+          {/* Invoice Date */}
+          <Controller
+            name="invoice_date"
+            control={control}
+            render={({ field }) => (
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  label="Invoice Date"
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(newValue) =>
+                    field.onChange(newValue ? newValue.toISOString() : null)
+                  }
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      size: "small",
+                      required: true,
+                      error: !!errors.invoice_date,
+                      helperText: errors.invoice_date?.message,
+                    },
+                  }}
+                />
+              </LocalizationProvider>
+            )}
+          />
+
+          {/* Supplier */}
+          <Controller
             name="supplier_id"
-            value={formData.supplier_id}
-            onChange={handleHeaderChange}
-            fullWidth
-            size="small"
-          >
-            {loadingSupplier ? (
-              <MenuItem disabled>Loading...</MenuItem>
-            ) : (
-              supplier.map((s) => (
-                <MenuItem key={s.supplier_id} value={s.supplier_id}>
-                  {s.supplier_name || s.supplier_id}
-                </MenuItem>
-              ))
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                select
+                label="Supplier"
+                fullWidth
+                size="small"
+                error={!!errors.supplier_id}
+                helperText={errors.supplier_id?.message}
+              >
+                {loadingSupplier ? (
+                  <MenuItem disabled>Loading...</MenuItem>
+                ) : (
+                  supplier.map((s) => (
+                    <MenuItem key={s.supplier_id} value={s.supplier_id}>
+                      {s.supplier_name || s.supplier_id}
+                    </MenuItem>
+                  ))
+                )}
+              </TextField>
             )}
-          </TextField>
-          <TextField
-            select
-            label="Store"
+          />
+
+          {/* Store */}
+          <Controller
             name="store_id"
-            value={formData.store_id}
-            onChange={handleHeaderChange}
-            fullWidth
-            size="small"
-          >
-            {loadingStore ? (
-              <MenuItem disabled>Loading...</MenuItem>
-            ) : (
-              store.map((s) => (
-                <MenuItem key={s.store_id} value={s.store_id}>
-                  {s.store_name || s.store_id}
-                </MenuItem>
-              ))
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                select
+                label="Store"
+                fullWidth
+                size="small"
+                error={!!errors.store_id}
+                helperText={errors.store_id?.message}
+              >
+                {loadingStore ? (
+                  <MenuItem disabled>Loading...</MenuItem>
+                ) : (
+                  store.map((s) => (
+                    <MenuItem key={s.store_id} value={s.store_id}>
+                      {s.store_name || s.store_id}
+                    </MenuItem>
+                  ))
+                )}
+              </TextField>
             )}
-          </TextField>
+          />
         </Box>
+
         <Box display="flex" gap={3} mt={1}>
           <TextField
             label="Created By"
-            value={currentUser?.username || currentUser?.user_id || ""}
+            value={currentUser?.username || createdBy || ""}
             fullWidth
             size="small"
             InputProps={{ readOnly: true }}
@@ -318,192 +374,311 @@ export default function AddPurchaseForm({ onClose }) {
                   <TableCell sx={{ minWidth: 90 }}>Rate</TableCell>
                   <TableCell sx={{ minWidth: 90 }}>MRP</TableCell>
                   <TableCell sx={{ minWidth: 80 }}>GST%</TableCell>
-                  <TableCell sx={{ minWidth: 90 }}>Disc%</TableCell>
+                  <TableCell sx={{ minWidth: 90 }}>Discount%</TableCell>
                   <TableCell sx={{ minWidth: 90 }}>Pack Qty</TableCell>
-                   <TableCell sx={{ minWidth: 70 }}>Qty</TableCell>
+                  <TableCell sx={{ minWidth: 70 }}>Qty</TableCell>
                   <TableCell sx={{ minWidth: 110 }}>Expiry</TableCell>
                   <TableCell sx={{ minWidth: 90 }}>Amount</TableCell>
-                  <TableCell sx={{ width: 50 }} align="center">Del</TableCell>
+                  <TableCell sx={{ width: 50 }} align="center">
+                    Del
+                  </TableCell>
                 </TableRow>
               </TableHead>
 
               <TableBody>
-                {rows.map((row, index) => (
-                  <TableRow key={index}>
-                    {/* Item */}
-                    <TableCell padding="none" sx={{ p: 0.25 }}>
-                      <TextField
-                        select
-                        label="Item"
-                        name="item_id"
-                        value={row.item_id || ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          handleRowChange(index, "item_id", value);
-                          const selectedItem = items.find(it => String(it.item_id) === String(value));
-                          if (selectedItem) {
-                            if (selectedItem.hsn?.gst_percent != null) {
-                              handleRowChange(index, "gst_percent", selectedItem.hsn.gst_percent);
-                            }
-                            if (selectedItem.pack_size != null) {
-                              setRows(prev => {
-                                const newRows = [...prev];
-                                const r = { ...newRows[index], pack_size: selectedItem.pack_size };
-                                const packQtyNum = parseFloat(r.pack_qty || 0);
-                                r.qty = packQtyNum * (isNaN(selectedItem.pack_size) ? 0 : selectedItem.pack_size);
-                                newRows[index] = r;
-                                return newRows;
-                              });
-                            }
-                          }
-                        }}
-                        fullWidth
-                        size="small"
-                        required
-                      >
-                        {loadingItems ? (
-                          <MenuItem disabled>Loading items...</MenuItem>
-                        ) : (
-                          items.map((it) => (
-                            <MenuItem key={it.item_id} value={it.item_id}>
-                              {it.item_name || it.name || `Item #${it.item_id}`}
-                            </MenuItem>
-                          ))
-                        )}
-                      </TextField>
-                    </TableCell>
+                {fields.map((field, index) => {
+                  const rowErrors = errors.items?.[index] || {};
+                  const rowValue = watchedItems[index] || {};
 
-                    {/* Batch */}
-                    <TableCell padding="none" sx={{ p: 0.25 }}>
-                      <TextField
-                        name="batch_no"
-                        value={row.batch_no}
-                        onChange={(e) => handleRowChange(index, "batch_no", e.target.value)}
-                        fullWidth
-                        size="small"
-                      />
-                    </TableCell>
+                  return (
+                    <TableRow key={field.id}>
+                      {/* Item */}
+                      <TableCell padding="none" sx={{ p: 0.25 }}>
+                        <Controller
+                          name={`items.${index}.item_id`}
+                          control={control}
+                          render={({ field: itemField }) => (
+                            <TextField
+                              {...itemField}
+                              select
+                              // label="Item"
+                              fullWidth
+                              size="small"
+                              error={!!rowErrors?.item_id}
+                              helperText={rowErrors?.item_id?.message}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                itemField.onChange(value);
 
-                   
+                                const selectedItem = items.find(
+                                  (it) => String(it.item_id) === String(value)
+                                );
+                                if (selectedItem) {
+                                  // set GST% from HSN
+                                  if (selectedItem.hsn?.gst_percent != null) {
+                                    handleItemChange(
+                                      index,
+                                      "gst_percent",
+                                      selectedItem.hsn.gst_percent
+                                    );
+                                  }
+                                  // set pack_size and recalc qty
+                                  if (selectedItem.pack_size != null) {
+                                    const current = [...(watch("items") || [])];
+                                    const r = {
+                                      ...current[index],
+                                      pack_size: selectedItem.pack_size,
+                                    };
+                                    const packQtyNum = parseFloat(r.pack_qty || 0);
+                                    r.qty =
+                                      packQtyNum *
+                                      (isNaN(selectedItem.pack_size)
+                                        ? 0
+                                        : selectedItem.pack_size);
+                                    current[index] = r;
+                                    setValue("items", current, { shouldValidate: true });
+                                  }
+                                }
+                              }}
+                            >
+                              {loadingItems ? (
+                                <MenuItem disabled>Loading items...</MenuItem>
+                              ) : (
+                                items.map((it) => (
+                                  <MenuItem key={it.item_id} value={it.item_id}>
+                                    {it.item_name || it.name || `Item #${it.item_id}`}
+                                  </MenuItem>
+                                ))
+                              )}
+                            </TextField>
+                          )}
+                        />
+                      </TableCell>
 
-                    {/* Rate */}
-                    <TableCell padding="none" sx={{ p: 0.25 }}>
-                      <TextField
-                        name="purchase_rate"
-                       
-                        value={row.purchase_rate}
-                        onChange={(e) => handleRowChange(index, "purchase_rate", e.target.value)}
-                        fullWidth
-                        size="small"
-                        inputProps={{ min: 0, step: "0.01" }}
-                      />
-                    </TableCell>
+                      {/* Batch */}
+                      <TableCell padding="none" sx={{ p: 0.25 }}>
+                        <Controller
+                          name={`items.${index}.batch_no`}
+                          control={control}
+                          render={({ field: batchField }) => (
+                            <TextField
+                              {...batchField}
+                              fullWidth
+                              size="small"
+                              // label="Batch"
+                              error={!!rowErrors?.batch_no}
+                              helperText={rowErrors?.batch_no?.message}
+                            />
+                          )}
+                        />
+                      </TableCell>
 
-                    {/* MRP */}
-                    <TableCell padding="none" sx={{ p: 0.25 }}>
-                      <TextField
-                        name="mrp"
-                    
-                        value={row.mrp}
-                        onChange={(e) => handleRowChange(index, "mrp", e.target.value)}
-                        fullWidth
-                        size="small"
-                        inputProps={{ min: 0, step: "0.01" }}
-                      />
-                    </TableCell>
+                      {/* Rate */}
+                      <TableCell padding="none" sx={{ p: 0.25 }}>
+                        <Controller
+                          name={`items.${index}.purchase_rate`}
+                          control={control}
+                          render={({ field: rateField }) => (
+                            <TextField
+                              {...rateField}
+                              fullWidth
+                              size="small"
+                              // label="Rate"
+                              inputProps={{ min: 0, step: "0.01" }}
+                              error={!!rowErrors?.purchase_rate}
+                              helperText={rowErrors?.purchase_rate?.message}
+                              onChange={(e) =>
+                                handleItemChange(index, "purchase_rate", e.target.value)
+                              }
+                            />
+                          )}
+                        />
+                      </TableCell>
 
-                    {/* GST% */}
-                    <TableCell padding="none" sx={{ p: 0.25 }}>
-                      <TextField
-                        name="gst_percent"
-                    
-                        value={row.gst_percent}
-                        onChange={(e) => handleRowChange(index, "gst_percent", e.target.value)}
-                        fullWidth
-                        size="small"
-                        inputProps={{ min: 0, step: "0.01" }}
-                      />
-                    </TableCell>
+                      {/* MRP */}
+                      <TableCell padding="none" sx={{ p: 0.25 }}>
+                        <Controller
+                          name={`items.${index}.mrp`}
+                          control={control}
+                          render={({ field: mrpField }) => (
+                            <TextField
+                              {...mrpField}
+                              fullWidth
+                              size="small"
+                              // label="MRP"
+                              inputProps={{ min: 0, step: "0.01" }}
+                              error={!!rowErrors?.mrp}
+                              helperText={rowErrors?.mrp?.message}
+                              onChange={(e) =>
+                                handleItemChange(index, "mrp", e.target.value)
+                              }
+                            />
+                          )}
+                        />
+                      </TableCell>
 
-                    {/* Disc% */}
-                    <TableCell padding="none" sx={{ p: 0.25 }}>
-                      <TextField
-                        name="discount_percent"
-                        value={row.discount_percent}
-                        onChange={(e) => handleRowChange(index, "discount_percent", e.target.value)}
-                        fullWidth
-                        size="small"
-                        inputProps={{ min: 0, step: "0.01" }}
-                      />
-                    </TableCell>
+                      {/* GST% */}
+                      <TableCell padding="none" sx={{ p: 0.25 }}>
+                        <Controller
+                          name={`items.${index}.gst_percent`}
+                          control={control}
+                          render={({ field: gstField }) => (
+                            <TextField
+                              {...gstField}
+                              fullWidth
+                              size="small"
+                              // label="GST%"
+                              inputProps={{ min: 0, step: "0.01" }}
+                              error={!!rowErrors?.gst_percent}
+                              helperText={rowErrors?.gst_percent?.message}
+                              onChange={(e) =>
+                                handleItemChange(index, "gst_percent", e.target.value)
+                              }
+                            />
+                          )}
+                        />
+                      </TableCell>
 
-                    {/* Pack (user input) */}
-                    <TableCell padding="none" sx={{ p: 0.25 }}>
-                      <TextField
-                        name="pack_qty"
-                        value={row.pack_qty}
-                        onChange={(e) => handleRowChange(index, "pack_qty", e.target.value)}
-                        fullWidth
-                        size="small"
-                        inputProps={{ min: 0, step: "1" }}
-                      />
-                    </TableCell>
-                     {/* Qty (read-only) */}
-                    <TableCell padding="none" sx={{ p: 0.25 }}>
-                      <TextField
-                        name="qty"
-                        value={row.qty}
-                        fullWidth
-                        size="small"
-                        InputProps={{ readOnly: true }}
-                      />
-                    </TableCell>
+                      {/* Disc% */}
+                      <TableCell padding="none" sx={{ p: 0.25 }}>
+                        <Controller
+                          name={`items.${index}.discount_percent`}
+                          control={control}
+                          render={({ field: discField }) => (
+                            <TextField
+                              {...discField}
+                              fullWidth
+                              size="small"
+                              // label="Disc%"
+                              inputProps={{ min: 0, step: "0.01" }}
+                              error={!!rowErrors?.discount_percent}
+                              helperText={rowErrors?.discount_percent?.message}
+                              onChange={(e) =>
+                                handleItemChange(
+                                  index,
+                                  "discount_percent",
+                                  e.target.value
+                                )
+                              }
+                            />
+                          )}
+                        />
+                      </TableCell>
 
-                    {/* Expiry */}
-                    <TableCell padding="none" sx={{ p: 0.25 }}>
-                      <TextField
-                        type="date"
-                        name="expiry_date"
-                        value={row.expiry_date}
-                        onChange={(e) => handleRowChange(index, "expiry_date", e.target.value)}
-                        fullWidth
-                        size="small"
-                        InputLabelProps={{ shrink: true }}
-                      />
-                    </TableCell>
+                      {/* Pack Qty */}
+                      <TableCell padding="none" sx={{ p: 0.25 }}>
+                        <Controller
+                          name={`items.${index}.pack_qty`}
+                          control={control}
+                          render={({ field: packField }) => (
+                            <TextField
+                              {...packField}
+                              fullWidth
+                              size="small"
+                              // label="Pack Qty"
+                              inputProps={{ min: 0, step: "1" }}
+                              error={!!rowErrors?.pack_qty}
+                              helperText={rowErrors?.pack_qty?.message}
+                              onChange={(e) =>
+                                handleItemChange(index, "pack_qty", e.target.value)
+                              }
+                            />
+                          )}
+                        />
+                      </TableCell>
 
-                    {/* Amount */}
-                    <TableCell padding="none" sx={{ p: 0.25 }}>
-                      <TextField
-                        name="amount"
-                        value={row.amount}
-                        fullWidth
-                        size="small"
-                        InputProps={{ readOnly: true }}
-                      />
-                    </TableCell>
+                      {/* Qty (read-only) */}
+                      <TableCell padding="none" sx={{ p: 0.25 }}>
+                        <Controller
+                          name={`items.${index}.qty`}
+                          control={control}
+                          render={({ field: qtyField }) => (
+                            <TextField
+                              {...qtyField}
+                              fullWidth
+                              size="small"
+                              // label="Qty"
+                              InputProps={{ readOnly: true }}
+                              error={!!rowErrors?.qty}
+                              helperText={rowErrors?.qty?.message}
+                              value={rowValue.qty || ""}
+                            />
+                          )}
+                        />
+                      </TableCell>
 
-                    {/* Delete */}
-                    <TableCell align="center" padding="none" sx={{ p: 0.25 }}>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleRemoveRow(index)}
-                        disabled={rows.length === 1}
-                      >
-                        <DeleteOutline fontSize="small" />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      {/* Expiry */}
+                      <TableCell padding="none" sx={{ p: 0.25 }}>
+                        <Controller
+                          name={`items.${index}.expiry_date`}
+                          control={control}
+                          render={({ field: expField }) => (
+                            <TextField
+                              {...expField}
+                              type="date"
+                              fullWidth
+                              size="small"
+                              // label="Expiry"
+                              InputLabelProps={{ shrink: true }}
+                              error={!!rowErrors?.expiry_date}
+                              helperText={rowErrors?.expiry_date?.message}
+                            />
+                          )}
+                        />
+                      </TableCell>
+
+                      {/* Amount */}
+                      <TableCell padding="none" sx={{ p: 0.25 }}>
+                        <Controller
+                          name={`items.${index}.amount`}
+                          control={control}
+                          render={({ field: amtField }) => (
+                            <TextField
+                              {...amtField}
+                              fullWidth
+                              size="small"
+                              // label="Amount"
+                              InputProps={{ readOnly: true }}
+                              value={rowValue.amount || ""}
+                              error={!!rowErrors?.amount}
+                              helperText={rowErrors?.amount?.message}
+                            />
+                          )}
+                        />
+                      </TableCell>
+
+                      {/* Delete */}
+                      <TableCell align="center" padding="none" sx={{ p: 0.25 }}>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleRemoveRow(index)}
+                          disabled={fields.length === 1}
+                        >
+                          <DeleteOutline fontSize="small" />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </Box>
         </Paper>
+        {errors.items && typeof errors.items.message === "string" && (
+          <Typography color="error" variant="caption" sx={{ ml: 1 }}>
+            {errors.items.message}
+          </Typography>
+        )}
       </Box>
 
       {/* Amount Summary */}
       <Box mt={2}>
-        <Typography variant="subtitle1" fontWeight={600} gutterBottom className="text-blue-700">
+        <Typography
+          variant="subtitle1"
+          fontWeight={600}
+          gutterBottom
+          className="text-blue-700"
+        >
           Amount Summary
         </Typography>
         <Divider />
@@ -512,7 +687,7 @@ export default function AddPurchaseForm({ onClose }) {
             <TextField
               label="Total Amount"
               name="total_amount"
-              value={formData.total_amount}
+              value={totals.total_amount}
               type="number"
               fullWidth
               size="small"
@@ -523,7 +698,7 @@ export default function AddPurchaseForm({ onClose }) {
             <TextField
               label="Total GST"
               name="total_gst"
-              value={formData.total_gst}
+              value={totals.total_gst}
               type="number"
               fullWidth
               size="small"
@@ -534,7 +709,7 @@ export default function AddPurchaseForm({ onClose }) {
             <TextField
               label="Total Discount"
               name="total_discount"
-              value={formData.total_discount}
+              value={totals.total_discount}
               type="number"
               fullWidth
               size="small"
@@ -545,7 +720,7 @@ export default function AddPurchaseForm({ onClose }) {
             <TextField
               label="Net Amount"
               name="net_amount"
-              value={formData.net_amount}
+              value={totals.net_amount}
               type="number"
               fullWidth
               size="small"
@@ -560,7 +735,7 @@ export default function AddPurchaseForm({ onClose }) {
               Cancel
             </Button>
           )}
-          <Button variant="contained" onClick={handleSubmit}>
+          <Button variant="contained" onClick={handleSubmit(onSubmit)}>
             Save Purchase
           </Button>
         </Box>

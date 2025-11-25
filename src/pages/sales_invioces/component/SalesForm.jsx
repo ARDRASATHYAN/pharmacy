@@ -30,6 +30,7 @@ import { useCurrentUser } from "@/hooks/useAuth";
 import { useCustomer } from "@/hooks/useCustomer";
 import { useAddSalesInvoice } from "@/hooks/useSalesInvoice";
 import apiClient from "@/services/apiClient";
+import { showSuccessToast } from "@/lib/toastService";
 
 const emptySaleItemRow = {
   item_id: "",
@@ -42,13 +43,29 @@ const emptySaleItemRow = {
   max_qty: null, // internal (from stock)
 };
 
+const initialFormData = {
+  store_id: "",
+  customer_id: "", // selected customer (optional)
+  created_by: "",
+  bill_no: "",
+  bill_date: null,
+  doctor_name: "",
+  prescription_no: "",
+  total_amount: 0,
+  total_gst: 0,
+  total_discount: 0,
+  net_amount: 0,
+  customer_name: "",
+  customer_phone: "",
+};
+
 function recalcRow(row) {
   const qtyNum = parseFloat(row.qty || 0);
   const rateNum = parseFloat(row.rate || 0);
   const gstPercent = parseFloat(row.gst_percent || 0);
   const discPercent = parseFloat(row.discount_percent || 0);
 
-  let baseTotal = qtyNum * rateNum; // before discount & GST
+  const baseTotal = qtyNum * rateNum;
   const discountAmount = (baseTotal * discPercent) / 100;
   const afterDiscount = baseTotal - discountAmount;
   const gstAmount = (afterDiscount * gstPercent) / 100;
@@ -62,7 +79,7 @@ function recalcRow(row) {
 
 export default function AddSalesForm({ onClose }) {
   const { data: store = [], isLoading: loadingStore } = useStores();
-  const { data: itemsMaster = [], isLoading: loadingItems } = useitem();
+  const { data: itemsMaster = [] } = useitem();
   const { data: currentUserResponse } = useCurrentUser();
   const { data: customers = [], isLoading: loadingCustomers } = useCustomer();
 
@@ -74,26 +91,9 @@ export default function AddSalesForm({ onClose }) {
 
   const items = Array.isArray(itemsMaster) ? itemsMaster : [];
 
-  const [formData, setFormData] = useState({
-    store_id: "",
-    customer_id: "", // selected customer (optional)
-    created_by: "",
-    bill_no: "",
-    bill_date: null,
-    doctor_name: "",
-    prescription_no: "",
-    total_amount: 0,
-    total_gst: 0,
-    total_discount: 0,
-    net_amount: 0,
-    customer_name: "",
-    customer_phone: "",
-  });
-
+  const [formData, setFormData] = useState(initialFormData);
   const [rows, setRows] = useState([emptySaleItemRow]);
-
-  // all stock for selected store
-  const [storeStock, setStoreStock] = useState([]);
+  const [storeStock, setStoreStock] = useState([]); // all stock for selected store
 
   useEffect(() => {
     if (currentUser && currentUser.user_id) {
@@ -116,7 +116,6 @@ export default function AddSalesForm({ onClose }) {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // when store changes → load stock and reset lines
     if (name === "store_id") {
       if (!value) {
         setStoreStock([]);
@@ -133,6 +132,7 @@ export default function AddSalesForm({ onClose }) {
       } catch (err) {
         console.error("Error loading store stock:", err);
         setStoreStock([]);
+        setRows([emptySaleItemRow]);
       }
     }
   };
@@ -187,7 +187,7 @@ export default function AddSalesForm({ onClose }) {
       const baseAfterDiscount = baseTotal - discountAmount;
       const gstAmount = (baseAfterDiscount * gstPercent) / 100;
 
-      total_amount += baseTotal; // before discount
+      total_amount += baseTotal;
       total_gst += gstAmount;
       total_discount += discountAmount;
     });
@@ -202,6 +202,17 @@ export default function AddSalesForm({ onClose }) {
       net_amount: net_amount.toFixed(2),
     }));
   }, [rows]);
+
+  const resetForm = () => {
+    setFormData((prev) => ({
+      ...initialFormData,
+      // keep store & created_by so user doesn’t have to reselect every time
+      store_id: prev.store_id,
+      created_by: prev.created_by,
+    }));
+    setRows([emptySaleItemRow]);
+    setStoreStock([]);
+  };
 
   const handleSubmit = () => {
     if (!formData.store_id) {
@@ -250,14 +261,22 @@ export default function AddSalesForm({ onClose }) {
 
     console.log("CREATE SALES PAYLOAD:", payload);
     addSalesInvoice.mutate(payload, {
-      onSuccess: () => onClose?.(),
+      onSuccess: () => {
+        showSuccessToast("Sale saved successfully");
+        resetForm();
+        onClose?.();
+      },
     });
   };
 
   return (
     <Box
       gap={3}
-      sx={{ display: "flex", flexDirection: "column", height: "calc(100vh - 64px)" }}
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        height: "calc(100vh - 64px)",
+      }}
     >
       {/* Header */}
       <Box>
@@ -474,7 +493,9 @@ export default function AddSalesForm({ onClose }) {
                           {formData.store_id &&
                             storeItems.map((it) => (
                               <MenuItem key={it.item_id} value={it.item_id}>
-                                {it.item_name || it.name || `Item #${it.item_id}`}
+                                {it.item_name ||
+                                  it.name ||
+                                  `Item #${it.item_id}`}
                               </MenuItem>
                             ))}
                         </TextField>
@@ -521,7 +542,9 @@ export default function AddSalesForm({ onClose }) {
                           disabled={!row.item_id || !formData.store_id}
                         >
                           {(!formData.store_id || !row.item_id) && (
-                            <MenuItem disabled>Select store & item first</MenuItem>
+                            <MenuItem disabled>
+                              Select store & item first
+                            </MenuItem>
                           )}
 
                           {row.item_id &&
@@ -550,9 +573,7 @@ export default function AddSalesForm({ onClose }) {
                           size="small"
                           inputProps={{ min: 0, step: "1" }}
                           helperText={
-                            row.max_qty != null
-                              ? `Max: ${row.max_qty}`
-                              : ""
+                            row.max_qty != null ? `Max: ${row.max_qty}` : ""
                           }
                         />
                       </TableCell>
@@ -577,7 +598,11 @@ export default function AddSalesForm({ onClose }) {
                           name="gst_percent"
                           value={row.gst_percent}
                           onChange={(e) =>
-                            handleRowChange(index, "gst_percent", e.target.value)
+                            handleRowChange(
+                              index,
+                              "gst_percent",
+                              e.target.value
+                            )
                           }
                           fullWidth
                           size="small"
@@ -697,7 +722,11 @@ export default function AddSalesForm({ onClose }) {
               Cancel
             </Button>
           )}
-          <Button variant="contained" onClick={handleSubmit}>
+          <Button
+            variant="contained"
+            onClick={handleSubmit}
+            disabled={addSalesInvoice.isLoading}
+          >
             Save Sale
           </Button>
         </Box>

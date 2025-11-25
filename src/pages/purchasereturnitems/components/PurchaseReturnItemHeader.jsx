@@ -16,6 +16,10 @@ export const getPurchaseReturnItemColumns = (onEdit, onDelete) => [
         header: "item_id",
         accessorKey: "item_id"
     },
+    {
+        header: "item name",
+        accessorKey: "name"
+    },
       {
         header: "batch_no",
         accessorKey: "batch_no"

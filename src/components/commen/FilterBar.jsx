@@ -1,3 +1,4 @@
+// src/components/commen/FilterBar.jsx
 import React from "react";
 import { TextField, MenuItem, InputAdornment, Box } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
@@ -7,18 +8,19 @@ export default function FilterBar({ filters, onFilterChange, filterFields }) {
     <Box
       sx={{
         display: "flex",
-        justifyContent: "space-between", // properly space items
+        justifyContent: "space-between",
         gap: 1.5,
         flexWrap: "wrap",
       }}
     >
       {filterFields.map((field) => {
+        // 🔹 TEXT FIELD
         if (field.type === "text") {
           return (
             <TextField
               key={field.name}
               name={field.name}
-              value={filters[field.name]}
+              value={filters[field.name] ?? ""}
               onChange={onFilterChange}
               placeholder={field.placeholder}
               size="small"
@@ -35,14 +37,17 @@ export default function FilterBar({ filters, onFilterChange, filterFields }) {
               }}
             />
           );
-        } else if (field.type === "select") {
+        }
+
+        // 🔹 SELECT FIELD
+        if (field.type === "select") {
           return (
             <TextField
               key={field.name}
               select
               label={field.label}
               name={field.name}
-              value={filters[field.name]}
+              value={filters[field.name] ?? ""}
               onChange={onFilterChange}
               size="small"
               variant="outlined"
@@ -64,6 +69,32 @@ export default function FilterBar({ filters, onFilterChange, filterFields }) {
             </TextField>
           );
         }
+
+        // 🔹 DATE FIELD
+        if (field.type === "date") {
+          return (
+            <TextField
+              key={field.name}
+              type="date"
+              label={field.label}
+              name={field.name}
+              value={filters[field.name] ?? ""}
+              onChange={onFilterChange}
+              size="small"
+              variant="outlined"
+              sx={{ width: field.width }}
+              InputLabelProps={{
+                shrink: true,        // ✅ label stays above when date is selected
+                sx: { fontSize: 12 },
+              }}
+              InputProps={{
+                sx: { height: 32, fontSize: 13, padding: "0 8px" },
+              }}
+            />
+          );
+        }
+
+        return null;
       })}
     </Box>
   );

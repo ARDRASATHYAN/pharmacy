@@ -68,6 +68,7 @@ export const navigationItems = [
       { key: "purchase-add", label: "Add Purchase", href: "/purchase/addpurchase" },
       { key: "purchase-invoice", label: "View Invoice", href: "/purchase/purchaceinvoice" },
       { key: "purchase-items", label: "View Purchase Item", href: "/purchase/purchaceitem" },
+      { key: "purchase-report", label: "purchase-report", href: "/purchase/report" },
     ],
   },
   {
@@ -90,6 +91,7 @@ export const navigationItems = [
       { key: "sales-add", label: "Add Sales", href: "/sales/add" },
       { key: "sales-view", label: "View Sales", href: "/sales/list" },
       { key: "sales-items", label: "View Sales Item", href: "/sales/items" },
+      { key: "sales-report", label: "Sales Report", href: "/sales/report" },
     ],
   },
   {

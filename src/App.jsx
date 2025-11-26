@@ -28,6 +28,8 @@ import ExcessStockMockApiHeader from "./pages/exceedstock";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import User from "./pages/user";
+import PurchaseReport from "./pages/report/PurchaseReport";
+import SalesReport from "./pages/report/SalesReport";
 
 
 
@@ -57,6 +59,7 @@ function App() {
           <Route path="/purchase/purchaceinvoice" element={<PurchaseInvoiceMockApiHeader />} />
           <Route path="/purchase/purchaceitem" element={<PurchaseItemMockApiHeader />} />
           <Route path="/purchase/addpurchase" element={<AddPurchaseForm />} />
+           <Route path="/purchase/report" element={<PurchaseReport/>} />
 
           <Route path="/stock" element={<StockMockApiHeader />} />
 
@@ -68,6 +71,7 @@ function App() {
           <Route path="/sales/add" element={<SalesForm />} />
           <Route path="/sales/list" element={<SalesInvoiceMockApiHeader />} />
           <Route path="/sales/items" element={<SalesItemMockApiHeader />} />
+          <Route path="/sales/report" element={<SalesReport />} />
 
 
           <Route path="/salesreturn/add" element={<AddSalesReturnForm />} />
@@ -81,6 +85,9 @@ function App() {
 
           <Route path="/excess/add" element={< AddExcessStockForm />} />
           <Route path="/excess/list" element={< ExcessStockMockApiHeader />} />
+
+
+          
  
 
         </Route>

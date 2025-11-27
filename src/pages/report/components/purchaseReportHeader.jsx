@@ -28,6 +28,15 @@ export const getPurchaseReportColumns = () => [
     accessorKey: "batch_no",
   },
   {
+    header: "Expiry",
+    id: "expiry",
+    accessorFn: (row) => row.expiry_date || "",
+  },
+  {
+    header: "Pack Qty",
+    accessorKey: "pack_qty",
+  },
+  {
     header: "Qty",
     accessorKey: "qty",
   },
@@ -36,8 +45,25 @@ export const getPurchaseReportColumns = () => [
     accessorKey: "purchase_rate",
   },
   {
-    header: "Amount",
-    accessorKey: "total_amount",
+    header: "Disc %",
+    accessorKey: "discount_percent",
   },
+ {
+  header: "Taxable Amount",
+  accessorKey: "taxable_amount",
+},
+{
+  header: "GST %",
+  accessorKey: "gst_percent",
+},
+{
+  header: "GST Amount",
+  accessorKey: "gst_amount",
+},
+{
+  header: "Total (With GST)",
+  accessorKey: "line_total_with_gst",
+},
+
 
 ];

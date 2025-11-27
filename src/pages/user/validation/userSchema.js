@@ -15,10 +15,10 @@ export const userSchema = Yup.object().shape({
       otherwise: (schema) => schema.notRequired(),
     }),
 
-  full_name: Yup.string()
-    .trim()
-    .required("Full name is required")
-    .min(3, "Full name must be at least 3 characters"),
+  // full_name: Yup.string()
+  //   .trim()
+  //   // .required("Full name is required")
+  //   .min(3, "Full name must be at least 3 characters"),
 
   role: Yup.string().required("Role is required"),
 

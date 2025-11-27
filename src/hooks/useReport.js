@@ -16,3 +16,20 @@ export function useSaleReport(filters = {}) {
     staleTime: 1000 * 60 * 5, // 5 minutes cache
   });
 }
+
+export function usePurchaseReturnReport(filters = {}) {
+  return useQuery({
+    queryKey: ["purchase-return-report", filters], // refetch when filters change
+    queryFn: () => reportService.getPurchaseReturnReport(filters),
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
+  });
+}
+
+
+export function useSalesReturnReport(filters = {}) {
+  return useQuery({
+    queryKey: ["sale-return-report", filters], // refetch when filters change
+    queryFn: () => reportService.getSalesReturnReport(filters),
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
+  });
+}

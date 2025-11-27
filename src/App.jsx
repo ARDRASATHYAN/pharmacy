@@ -30,6 +30,10 @@ import "react-toastify/dist/ReactToastify.css";
 import User from "./pages/user";
 import PurchaseReport from "./pages/report/PurchaseReport";
 import SalesReport from "./pages/report/SalesReport";
+import PurchaseReturnReport from "./pages/report/PurchaseReturnReport";
+import SalesReturnReport from "./pages/report/SalesReturnReport";
+
+
 
 
 
@@ -67,6 +71,7 @@ function App() {
           <Route path="/return/addpurchasereturn" element={<PurchaseReturnForm />} />
           <Route path="/purchase/purchacereturn" element={<PurchaseReturnMockApiHeader />} />
           <Route path="/return/returnitem" element={<PurchaseREturnItemMockApiHeader />} />
+            <Route path="/return/report" element={<PurchaseReturnReport/>} />
 
           <Route path="/sales/add" element={<SalesForm />} />
           <Route path="/sales/list" element={<SalesInvoiceMockApiHeader />} />
@@ -77,6 +82,7 @@ function App() {
           <Route path="/salesreturn/add" element={<AddSalesReturnForm />} />
           <Route path="/salesreturn/list" element={< SalesReturnMockApiHeader />} />
           <Route path="/salesreturn/items" element={< SalesReturnItemMockApiHeader />} />
+          <Route path="/salesreturn/report" element={<SalesReturnReport/>} />
 
 
           <Route path="/damaged/add" element={< AddDamagedStockForm />} />

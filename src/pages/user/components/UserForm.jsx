@@ -110,9 +110,6 @@ export default function UserForm({
             error={!!errors.full_name}
             helperText={errors.full_name?.message}
             autoComplete="off"
-            inputProps={{
-              name: "user_username_x",   // 👈 Edge sees this, not "username"
-            }}
           />
         </Box>
 
@@ -122,9 +119,7 @@ export default function UserForm({
           fullWidth
           size="small"
           autoComplete="new-password"
-          inputProps={{
-            name: "user_password_x",
-          }}
+         
           {...register("password")}
           error={!!errors.password}
           helperText={
